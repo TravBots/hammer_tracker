@@ -1,0 +1,4 @@
+*.db
+sqlite_test.py
+env/
+config.ini
