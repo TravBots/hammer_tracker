@@ -2,3 +2,4 @@
 sqlite_test.py
 env/
 config.ini
+nohup.out

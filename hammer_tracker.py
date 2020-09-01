@@ -10,6 +10,27 @@ DB = config['default']['database']
 
 client = discord.Client()
 
+
+def init(message):
+    guild_name = str(message.guild.name)
+    guild_id = str(message.guild.id)
+    
+    try:
+        print(guild_name, guild_id)
+        config.add_section(guild_id)
+        config[guild_id]['database'] = '{}.db'.format(guild_id)
+
+        with open('config.ini', 'w') as conf:
+            config.write(conf)
+        
+        embed = discord.Embed(color=0x00ff00)
+        embed.add_field(name="Success", value="Database initialized")
+    except configparser.DuplicateSectionError:
+        embed = discord.Embed(color=0x00ff00)
+        embed.add_field(name="Error", value="Database already exists")
+
+    return embed
+
 def create_table(db_name):
     conn = sqlite3.connect(db_name)
     conn.execute('''CREATE TABLE IF NOT EXISTS HAMMERS
@@ -39,21 +60,48 @@ def get_report(db_name, ign, count):
     conn = sqlite3.connect(db_name)
     query = conn.execute('''select * from hammers where lower(ign) = ? order by timestamp limit ?;''', (ign.lower(), count))
     
+    try: 
+        response = ''
+        for row in query:
+            print(row)
+            response += "\nReport: {} \nTimestamp: {} \n".format(row[2], row[3])
+
+        embed = discord.Embed(title="Reports for player {}".format(row[1]), description="Most recent reports at the bottom", color=0x00ff00)
+        embed.add_field(name="Reports", value=response)
+    except UnboundLocalError:
+        embed = discord.Embed(color=0x00ff00)
+        embed.add_field(name="Error", value="No entry for the player {} in the database".format(ign))
     
-    response = ''
-    for row in query:
-        response += "\nReport: {} \nTimestamp: {} \n".format(row[2], row[3])
-    
-    embed = discord.Embed(title="Reports for player {}".format(row[1]), description="Most recent reports at the bottom", color=0x00ff00)
-    embed.add_field(name="Reports", value=response)
     conn.close()
+    
     return embed
 
 def give_help():
     embed = discord.Embed(description="Help", color=0x00ff00)
-    embed.add_field(name="Add a Report", value="!tracker add <IGN> <LINK>")
-    embed.add_field(name="Get Reports", value="!tracker get <IGN> <NUMBER - Optional>")
+    embed.add_field(name="Add a Report", value="`!tracker add <IGN> <LINK>`")
+    embed.add_field(name="Get Reports", value="`!tracker get <IGN> <NUMBER - Optional>`")
+    embed.add_field(name="Initialize Database", value="`!tracker init`")
+    embed.add_field(name="Get Tracker Information", value="`!tracker info`")
 
+    return embed
+
+def give_info(db_name, guild_name):
+    embed = discord.Embed(description="Information", color=0x00ff00)
+    embed.add_field(name="Server Name:", value=guild_name)
+    embed.add_field(name="Database Name:", value=db_name)
+
+    return embed
+
+def no_db_error():
+    embed = discord.Embed(color=0x00ff00)
+    embed.add_field(name="Error", value="Database not initialized. Try `!tracker init` first")
+
+    return embed
+
+def no_link_error():
+    embed = discord.Embed(color=0x00ff00)
+    embed.add_field(name="Error", value="No link provided. See `!tracker help` for syntax help")
+    
     return embed
 
 @client.event
@@ -61,26 +109,56 @@ async def on_message(message):
     if message.author == client.user:
         return
 
-    if message.content.startswith( '!tracker add'):
-        post = message.content.split(" ")
+    if message.content.startswith('!tracker init'):
+        response = init(message)
         
-        create_table("as3.db")
-        response = add_report("as3.db", post[2], post[3])
-        
+        guild_id = str(message.guild.id)
+        DB = config[guild_id]['database']
+        create_table(DB)
+
+        await message.channel.send(embed=response)
+    
+    elif message.content.startswith('!tracker info'):
+        try:
+            guild_id = str(message.guild.id)
+            DB = config[guild_id]['database']
+            guild = str(message.guild.name)
+            response = give_info(DB, guild)
+        except KeyError:
+            response = no_db_error()
+
+        await message.channel.send(embed=response)
+
+    elif message.content.startswith('!tracker add'):
+        try:
+            post = message.content.split(" ")
+            guild_id = str(message.guild.id)
+            DB = config[guild_id]['database']
+            response = add_report(DB, post[2], post[3])
+        except IndexError:
+            response = no_link_error()
+        except KeyError:
+            response = no_db_error()
+
         await message.channel.send(embed=response)
 
     elif message.content.startswith('!tracker get'):
         post = message.content.split(" ")
-        
+        guild_id = str(message.guild.id)
+
         try:
-            response = get_report("as3.db", post[2], post[3])
+            DB = config[guild_id]['database']
+            response = get_report(DB, post[2], post[3])
         except IndexError:
-            response = get_report("as3.db", post[2], "1")
-        
+            response = get_report(DB, post[2], "1")
+        except KeyError:
+            response = no_db_error()
+
         await message.channel.send(embed=response)
     
     elif message.content.startswith('!tracker'):
         response = give_help()
 
         await message.channel.send(embed=response)
+
 client.run(TOKEN)
