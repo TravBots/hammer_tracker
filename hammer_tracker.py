@@ -42,9 +42,9 @@ def get_report(db_name, ign, count):
     
     response = ''
     for row in query:
-        response += "\nIGN: {} \nReport: {} \nTimestamp: {} \n".format(row[1], row[2], row[3])
+        response += "\nReport: {} \nTimestamp: {} \n".format(row[2], row[3])
     
-    embed = discord.Embed(description="Most recent reports at the bottom", color=0x00ff00)
+    embed = discord.Embed(title="Reports for player {}".format(row[1]), description="Most recent reports at the bottom", color=0x00ff00)
     embed.add_field(name="Reports", value=response)
     conn.close()
     return embed
@@ -69,7 +69,7 @@ async def on_message(message):
         
         await message.channel.send(embed=response)
 
-    if message.content.startswith('!tracker get'):
+    elif message.content.startswith('!tracker get'):
         post = message.content.split(" ")
         
         try:
