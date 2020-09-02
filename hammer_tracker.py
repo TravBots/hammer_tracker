@@ -11,7 +11,7 @@ DB = config['default']['database']
 
 client = discord.Client()
 
-
+error = 0xB22222
 def init(message):
     guild_name = str(message.guild.name)
     guild_id = str(message.guild.id)
@@ -27,7 +27,7 @@ def init(message):
         embed = discord.Embed(color=0x00ff00)
         embed.add_field(name="Success", value="Database initialized")
     except configparser.DuplicateSectionError:
-        embed = discord.Embed(color=0x00ff00)
+        embed = discord.Embed(color=error)
         embed.add_field(name="Error", value="Database already exists")
 
     return embed
@@ -81,7 +81,7 @@ def get_report(db_name, ign, count):
         embed = discord.Embed(title="Reports for player {}".format(row[1]), description="Most recent reports at the bottom", color=0x00ff00)
         embed.add_field(name="Reports", value=response)
     except UnboundLocalError:
-        embed = discord.Embed(color=0x00ff00)
+        embed = discord.Embed(color=error)
         embed.add_field(name="Error", value="No entry for the player {} in the database".format(ign))
     
     conn.close()
@@ -105,13 +105,13 @@ def give_info(db_name, guild_name):
     return embed
 
 def no_db_error():
-    embed = discord.Embed(color=0x00ff00)
+    embed = discord.Embed(color=error)
     embed.add_field(name="Error", value="Database not initialized. Try `!tracker init` first")
 
     return embed
 
 def no_link_error():
-    embed = discord.Embed(color=0x00ff00)
+    embed = discord.Embed(color=error)
     embed.add_field(name="Error", value="No link provided. See `!tracker help` for syntax help")
     
     return embed
