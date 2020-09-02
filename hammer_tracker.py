@@ -2,6 +2,7 @@ import os
 import sqlite3
 import discord
 import configparser
+import re
 
 config = configparser.ConfigParser()
 config.read("config.ini")
@@ -55,6 +56,17 @@ def add_report(db_name, ign, link):
     embed.add_field(name="Success", value="Report for player {} added to database".format(ign))
 
     return embed
+
+def validate_add_input(txt):
+    pattern = "http[s]?://(?:[a-zA-Z]|[0-9]|[$-_@.&+]|[!*\(\),]|(?:%[0-9a-fA-F][0-9a-fA-F]))+"
+    ign = ""
+
+    url = [bool(re.search(pattern, part)) for part in txt]
+
+    if url[-1] is True:
+        return True
+    else:
+        return False
 
 def get_report(db_name, ign, count):
     conn = sqlite3.connect(db_name)
@@ -132,11 +144,14 @@ async def on_message(message):
     elif message.content.startswith('!tracker add'):
         try:
             post = message.content.split(" ")
-            guild_id = str(message.guild.id)
-            DB = config[guild_id]['database']
-            response = add_report(DB, post[2], post[3])
-        except IndexError:
-            response = no_link_error()
+            validated = validate_add_input(post)
+            
+            if validated:
+                guild_id = str(message.guild.id)
+                DB = config[guild_id]['database']
+                response = add_report(DB, " ".join(post[2:-1]), post[-1])
+            else:
+                response = no_link_error()
         except KeyError:
             response = no_db_error()
 
@@ -145,12 +160,13 @@ async def on_message(message):
     elif message.content.startswith('!tracker get'):
         post = message.content.split(" ")
         guild_id = str(message.guild.id)
-
+        DB = config[guild_id]['database']
+        
         try:
-            DB = config[guild_id]['database']
-            response = get_report(DB, post[2], post[3])
-        except IndexError:
-            response = get_report(DB, post[2], "1")
+            if isinstance(int(post[-1]), int):    
+                response = get_report(DB, " ".join(post[2:-1]), post[-1])
+        except ValueError:
+            response = get_report(DB, " ".join(post[2:]), "1")
         except KeyError:
             response = no_db_error()
 
