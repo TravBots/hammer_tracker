@@ -19,7 +19,7 @@ def init(message):
     try:
         print(guild_name, guild_id)
         config.add_section(guild_id)
-        config[guild_id]['database'] = '{}.db'.format(guild_id)
+        config[guild_id]['database'] = 'databases/{}.db'.format(guild_id)
 
         with open('config.ini', 'w') as conf:
             config.write(conf)
