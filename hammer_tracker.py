@@ -12,6 +12,8 @@ DB = config['default']['database']
 client = discord.Client()
 
 error = 0xB22222
+success = 0x207325
+
 def init(message):
     guild_name = str(message.guild.name)
     guild_id = str(message.guild.id)
@@ -24,7 +26,7 @@ def init(message):
         with open('config.ini', 'w') as conf:
             config.write(conf)
         
-        embed = discord.Embed(color=0x00ff00)
+        embed = discord.Embed(color=success)
         embed.add_field(name="Success", value="Database initialized")
     except configparser.DuplicateSectionError:
         embed = discord.Embed(color=error)
@@ -52,14 +54,13 @@ def add_report(db_name, ign, link):
     conn.commit()
     conn.close()
 
-    embed = discord.Embed(color=0x00ff00)
+    embed = discord.Embed(color=success)
     embed.add_field(name="Success", value="Report for player {} added to database".format(ign))
 
     return embed
 
 def validate_add_input(txt):
     pattern = "http[s]?://(?:[a-zA-Z]|[0-9]|[$-_@.&+]|[!*\(\),]|(?:%[0-9a-fA-F][0-9a-fA-F]))+"
-    ign = ""
 
     url = [bool(re.search(pattern, part)) for part in txt]
 
@@ -78,7 +79,7 @@ def get_report(db_name, ign, count):
             print(row)
             response += "\nReport: {} \nTimestamp: {} \n".format(row[2], row[3])
 
-        embed = discord.Embed(title="Reports for player {}".format(row[1]), description="Most recent reports at the bottom", color=0x00ff00)
+        embed = discord.Embed(title="Reports for player {}".format(row[1]), description="Most recent reports at the bottom", color=success)
         embed.add_field(name="Reports", value=response)
     except UnboundLocalError:
         embed = discord.Embed(color=error)
@@ -89,7 +90,7 @@ def get_report(db_name, ign, count):
     return embed
 
 def give_help():
-    embed = discord.Embed(description="Help", color=0x00ff00)
+    embed = discord.Embed(description="Help", color=success)
     embed.add_field(name="Add a Report", value="`!tracker add <IGN> <LINK>`")
     embed.add_field(name="Get Reports", value="`!tracker get <IGN> <NUMBER - Optional>`")
     embed.add_field(name="Initialize Database", value="`!tracker init`")
@@ -98,7 +99,7 @@ def give_help():
     return embed
 
 def give_info(db_name, guild_name):
-    embed = discord.Embed(description="Information", color=0x00ff00)
+    embed = discord.Embed(description="Information", color=success)
     embed.add_field(name="Server Name:", value=guild_name)
     embed.add_field(name="Database Name:", value=db_name)
 
