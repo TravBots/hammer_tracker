@@ -69,17 +69,17 @@ def validate_add_input(txt):
     else:
         return False
 
-def get_report(db_name, ign, count):
+def get_reports(db_name, ign, count = "1"):
     conn = sqlite3.connect(db_name)
-    query = conn.execute('''select * from hammers where lower(ign) = ? order by timestamp limit ?;''', (ign.lower(), count))
+    query = conn.execute('''select IGN, LINK, datetime(TIMESTAMP, '-4 hours') from hammers where lower(ign) = ? order by timestamp limit ?;''', (ign.lower(), count))
     
     try: 
         response = ''
         for row in query:
             print(row)
-            response += "\nReport: {} \nTimestamp: {} \n".format(row[2], row[3])
+            response += "\nReport: {} \nTimestamp: {} \n".format(row[1], row[2])
 
-        embed = discord.Embed(title="Reports for player {}".format(row[1]), description="Most recent reports at the bottom", color=success)
+        embed = discord.Embed(title="Reports for player {}".format(row[0]), description="Most recent reports at the bottom", color=success)
         embed.add_field(name="Reports", value=response)
     except UnboundLocalError:
         embed = discord.Embed(color=error)
@@ -89,12 +89,31 @@ def get_report(db_name, ign, count):
     
     return embed
 
+def get_one_report(db_name, ign):
+    conn = sqlite3.connect(db_name)
+    query = conn.execute('''select IGN, LINK, datetime(TIMESTAMP, '-4 hours') from hammers where lower(ign) = ? order by timestamp desc limit 1;''', (ign.lower(),))
+
+    try:
+        response = ''
+        for row in query:
+            response += "\nReport: {} \nTimestamp: {}\n".format(row[1], row[2])
+
+        embed = discord.Embed(title="Latest report for player {}".format(row[0]), color=success)
+        embed.add_field(name="Report", value=response)
+    except UnboundLocalError:
+        embed = discord.Embed(color=error)
+        embed.add_field(name="Error", value="No entry for the player {} in the database".format(ign))
+
+    conn.close()
+
+    return embed
+
 def give_help():
     embed = discord.Embed(description="Help", color=success)
-    embed.add_field(name="Add a Report", value="`!tracker add <IGN> <LINK>`")
-    embed.add_field(name="Get Reports", value="`!tracker get <IGN> <NUMBER - Optional>`")
-    embed.add_field(name="Initialize Database", value="`!tracker init`")
-    embed.add_field(name="Get Tracker Information", value="`!tracker info`")
+    embed.add_field(name="Add a Report [Tracker Admin]", value="`!tracker add <IGN> <LINK>`")
+    embed.add_field(name="Get Reports [Tracker User]", value="`!tracker get <IGN> <NUMBER - Optional>`")
+    embed.add_field(name="Initialize Database [Tracker Admin]", value="`!tracker init`")
+    embed.add_field(name="Get Tracker Information [Tracker Admin]", value="`!tracker info`")
 
     return embed
 
@@ -122,7 +141,7 @@ async def on_message(message):
     if message.author == client.user:
         return
 
-    if message.content.startswith('!tracker init'):
+    if message.content.startswith('!tracker init') and "tracker admin" in [a.name.lower() for a in message.author.roles]:
         response = init(message)
         
         guild_id = str(message.guild.id)
@@ -131,7 +150,7 @@ async def on_message(message):
 
         await message.channel.send(embed=response)
     
-    elif message.content.startswith('!tracker info'):
+    elif message.content.startswith('!tracker info') and "tracker admin" in [a.name.lower() for a in message.author.roles]:
         try:
             guild_id = str(message.guild.id)
             DB = config[guild_id]['database']
@@ -142,7 +161,7 @@ async def on_message(message):
 
         await message.channel.send(embed=response)
 
-    elif message.content.startswith('!tracker add'):
+    elif message.content.startswith('!tracker add') and "tracker admin" in [a.name.lower() for a in message.author.roles]:
         try:
             post = message.content.split(" ")
             validated = validate_add_input(post)
@@ -158,24 +177,27 @@ async def on_message(message):
 
         await message.channel.send(embed=response)
 
-    elif message.content.startswith('!tracker get'):
+    elif message.content.startswith('!tracker get') and ("tracker user" in [a.name.lower() for a in message.author.roles] or "tracker admin" in [a.name.lower() for a in message.author.roles]):
         post = message.content.split(" ")
         guild_id = str(message.guild.id)
         DB = config[guild_id]['database']
         
         try:
             if isinstance(int(post[-1]), int):    
-                response = get_report(DB, " ".join(post[2:-1]), post[-1])
+                response = get_reports(DB, " ".join(post[2:-1]), post[-1])
         except ValueError:
-            response = get_report(DB, " ".join(post[2:]), "1")
+            response = get_one_report(DB, " ".join(post[2:]))
         except KeyError:
             response = no_db_error()
 
         await message.channel.send(embed=response)
     
-    elif message.content.startswith('!tracker'):
+    elif message.content.startswith('!tracker') and ("tracker user" in [a.name.lower() for a in message.author.roles] or "tracker admin" in [a.name.lower() for a in message.author.roles]):
         response = give_help()
 
         await message.channel.send(embed=response)
+
+    else:
+        return
 
 client.run(TOKEN)
