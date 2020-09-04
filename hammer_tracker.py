@@ -69,6 +69,29 @@ def validate_add_input(txt):
     else:
         return False
 
+def validate_unique_url(db_name, url, ign):
+    conn = sqlite3.connect(db_name)
+
+    query = "SELECT LINK FROM HAMMERS WHERE IGN = ?;"
+    data = (ign,)
+    
+    data = conn.execute(query, data)
+    
+    urls = []
+
+    for row in data:
+        urls.append(row[0])
+
+    conn.close()
+
+    if url in urls:
+        unique = False
+    else:
+        unique = True
+    
+    print(db_name, url, urls, unique, ign)
+    return unique
+
 def get_reports(db_name, ign, count = "1"):
     conn = sqlite3.connect(db_name)
     query = conn.execute('''select IGN, LINK, datetime(TIMESTAMP, '-4 hours') from hammers where lower(ign) = ? order by timestamp limit ?;''', (ign.lower(), count))
@@ -136,6 +159,12 @@ def no_link_error():
     
     return embed
 
+def not_unique_error():
+    embed = discord.Embed(color=error)
+    embed.add_field(name="Error", value="This report has already been recorded")
+
+    return embed
+
 @client.event
 async def on_message(message):
     if message.author == client.user:
@@ -164,17 +193,20 @@ async def on_message(message):
     elif message.content.startswith('!tracker add') and "tracker admin" in [a.name.lower() for a in message.author.roles]:
         try:
             post = message.content.split(" ")
-            validated = validate_add_input(post)
-            
+            validated = validate_add_input(post) 
             if validated:
                 guild_id = str(message.guild.id)
                 DB = config[guild_id]['database']
-                response = add_report(DB, " ".join(post[2:-1]), post[-1])
+                unique = validate_unique_url(DB, post[-1], str(post[2:-1][0]))
+                if unique:
+                    response = add_report(DB, " ".join(post[2:-1]), post[-1])
+                else:
+                    response = not_unique_error()
             else:
                 response = no_link_error()
         except KeyError:
             response = no_db_error()
-
+        
         await message.channel.send(embed=response)
 
     elif message.content.startswith('!tracker get') and ("tracker user" in [a.name.lower() for a in message.author.roles] or "tracker admin" in [a.name.lower() for a in message.author.roles]):
