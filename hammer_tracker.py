@@ -17,11 +17,14 @@ success = 0x207325
 def init(message):
     guild_name = str(message.guild.name)
     guild_id = str(message.guild.id)
-    
+    message_author = str(message.author)
+
     try:
         print(guild_name, guild_id)
         config.add_section(guild_id)
         config[guild_id]['database'] = 'databases/{}.db'.format(guild_id)
+        config[guild_id]['server'] = guild_name
+        config[guild_id]['init_user'] = message_author
 
         with open('config.ini', 'w') as conf:
             config.write(conf)
@@ -34,6 +37,28 @@ def init(message):
 
     return embed
 
+def set_admin(guild_id, server_role):
+    config[guild_id]["admin_role"] = server_role
+
+    with open('config.ini', 'w') as conf:
+        config.write(conf)
+    
+    embed = discord.Embed(color=success)
+    embed.add_field(name="Success", value="Role {} set as Tracker Admin".format(server_role))
+
+    return embed
+
+def set_user(guild_id, server_role):
+    config[guild_id]["user_role"] = server_role
+
+    with open('config.ini', 'w') as conf:
+        config.write(conf)
+
+    embed = discord.Embed(color=success)
+    embed.add_field(name="Success", value="Role {} set as Tracker User".format(server_role))
+
+    return embed
+    
 def create_table(db_name):
     conn = sqlite3.connect(db_name)
     conn.execute('''CREATE TABLE IF NOT EXISTS HAMMERS
@@ -140,10 +165,13 @@ def give_help():
 
     return embed
 
-def give_info(db_name, guild_name):
+def give_info(db_name, guild_id):
     embed = discord.Embed(description="Information", color=success)
-    embed.add_field(name="Server Name:", value=guild_name)
+    embed.add_field(name="Server Name:", value=config[guild_id]["server"])
     embed.add_field(name="Database Name:", value=db_name)
+    embed.add_field(name="Tracker Admin", value=config[guild_id]["admin_role"])
+    embed.add_field(name="Tracker User", value=config[guild_id]["user_role"])
+
 
     return embed
 
@@ -169,8 +197,30 @@ def not_unique_error():
 async def on_message(message):
     if message.author == client.user:
         return
+    
+    if message.content.startswith('!tracker set admin ') and "tracker admin" in [a.name.lower() for a in message.author.roles]:
+        post = message.content.split(" ")
+        server_role = " ".join(post[3:])
+        
+        try:
+            response = set_admin(str(message.guild.id), server_role)
+        except KeyError:
+            response = no_db_error()
 
-    if message.content.startswith('!tracker init') and "tracker admin" in [a.name.lower() for a in message.author.roles]:
+        await message.channel.send(embed=response)
+
+    elif message.content.startswith('!tracker set user ') and "tracker admin" in [a.name.lower() for a in message.author.roles]:
+        post = message.content.split(" ")
+        server_role = " ".join(post[3:])
+        
+        try:
+            response = set_user(str(message.guild.id), server_role)
+        except KeyError:
+            response = no_db_error()
+
+        await message.channel.send(embed=response)
+
+    elif message.content.startswith('!tracker init') and "tracker admin" in [a.name.lower() for a in message.author.roles]:
         response = init(message)
         
         guild_id = str(message.guild.id)
@@ -178,26 +228,26 @@ async def on_message(message):
         create_table(DB)
 
         await message.channel.send(embed=response)
-    
+
     elif message.content.startswith('!tracker info') and "tracker admin" in [a.name.lower() for a in message.author.roles]:
         try:
             guild_id = str(message.guild.id)
             DB = config[guild_id]['database']
             guild = str(message.guild.name)
-            response = give_info(DB, guild)
+            response = give_info(DB, guild_id)
         except KeyError:
             response = no_db_error()
 
         await message.channel.send(embed=response)
 
-    elif message.content.startswith('!tracker add') and "tracker admin" in [a.name.lower() for a in message.author.roles]:
+    elif message.content.startswith('!tracker add ') and "tracker admin" in [a.name.lower() for a in message.author.roles]:
         try:
             post = message.content.split(" ")
             validated = validate_add_input(post) 
             if validated:
                 guild_id = str(message.guild.id)
                 DB = config[guild_id]['database']
-                unique = validate_unique_url(DB, post[-1], str(post[2:-1][0]))
+                unique = validate_unique_url(DB, post[-1], " ".join((post[2:-1])))
                 if unique:
                     response = add_report(DB, " ".join(post[2:-1]), post[-1])
                 else:
@@ -209,7 +259,7 @@ async def on_message(message):
         
         await message.channel.send(embed=response)
 
-    elif message.content.startswith('!tracker get') and ("tracker user" in [a.name.lower() for a in message.author.roles] or "tracker admin" in [a.name.lower() for a in message.author.roles]):
+    elif message.content.startswith('!tracker get ') and ("tracker user" in [a.name.lower() for a in message.author.roles] or "tracker admin" in [a.name.lower() for a in message.author.roles]):
         post = message.content.split(" ")
         guild_id = str(message.guild.id)
         DB = config[guild_id]['database']
