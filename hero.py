@@ -151,8 +151,11 @@ def get_hero_items(url):
 
     items = ''
     for k, v in hero_item_postions.items():
-        items+=(hero_items_dict[hero_items_string[k:k+v].upper()])
-        items+='\n'
+        try:
+            items+=(hero_items_dict[hero_items_string[k:k+v].upper()])
+            items+='\n'
+        except KeyError:
+            pass
 
 
     embed = discord.Embed(color=success)
