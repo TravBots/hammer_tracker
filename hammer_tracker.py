@@ -5,6 +5,7 @@ import configparser
 import re
 
 from funcs import *
+from hero import *
 
 config = configparser.ConfigParser()
 config.read("config.ini")
@@ -145,6 +146,12 @@ async def on_message(message):
         print(message.guild.owner)
 
         await message.delete()
+
+    elif message.content.startswith('!gear '):
+        url = message.content.split(' ')[1]
+        response = get_hero_items(url)
+
+        await message.channel.send(embed=response)
     
     else:
         return
