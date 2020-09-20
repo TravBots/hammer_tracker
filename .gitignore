@@ -3,3 +3,4 @@ sqlite_test.py
 env/
 config.ini
 nohup.out
+__pycache__/*
