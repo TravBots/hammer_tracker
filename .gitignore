@@ -1,7 +1,7 @@
 *.db
+databases/
 sqlite_test.py
 env/
-tracker/
 config.ini
 nohup.out
-__pycache__/*
+__pycache__/
