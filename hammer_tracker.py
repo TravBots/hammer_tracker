@@ -1,159 +1,201 @@
-import os
-import sqlite3
 import discord
 import configparser
-import re
+from typing import Any
 
+from errors import *
 from funcs import *
 from hero import *
+from validators import *
 
-config = configparser.ConfigParser()
-config.read("config.ini")
-TOKEN = config['default']['token']
-DB = config['default']['database']
+intents = discord.Intents.all()
+intents.message_content = True
 
-client = discord.Client()
 
-#error = 0xB22222
-#success = 0x207325
+class Tracker(discord.Client):
+    def __init__(
+        self,
+        *,
+        intents: discord.Intents,
+        **options: Any,
+    ) -> None:
+        super().__init__(intents=intents, **options)
 
-@client.event
-async def on_message(message):
-    if message.author == client.user:
-        return
-    
-    if message.content.startswith('!tracker set admin ') and "tracker admin" in [a.name.lower() for a in message.author.roles]:
-        post = message.content.split(" ")
-        server_role = " ".join(post[3:])
-        
+        self.config = configparser.ConfigParser()
+        self.config.read("config.ini")
+
+        self.TOKEN = self.config["default"]["token"]
+
+    async def on_message(self, message):
+        if message.author == client.user:
+            return
+
+        # Refresh config
+        self.config.read("config.ini")
+
         try:
-            response = set_admin(str(message.guild.id), server_role)
-        except KeyError:
-            response = no_db_error()
-
-        await message.channel.send(embed=response)
-
-    elif message.content.startswith('!tracker set user ') and "tracker admin" in [a.name.lower() for a in message.author.roles]:
-        post = message.content.split(" ")
-        server_role = " ".join(post[3:])
-        
-        try:
-            response = set_user(str(message.guild.id), server_role)
-        except KeyError:
-            response = no_db_error()
-
-        await message.channel.send(embed=response)
-
-    elif message.content.startswith('!tracker init') and "tracker admin" in [a.name.lower() for a in message.author.roles]:
-        response = init(message)
-        
-        guild_id = str(message.guild.id)
-        DB = config[guild_id]['database']
-        create_table(DB)
-
-        await message.channel.send(embed=response)
-
-    elif message.content.startswith('!tracker info'):
-        guild_id = str(message.guild.id)
-        admin_role = config[guild_id]['admin_role']
-        user_role = config[guild_id]['user_role']
-
-        print(admin_role, user_role, message.author.roles)
-
-        if admin_role.lower() in [a.name.lower() for a in message.author.roles]:
-            try:
-                guild_id = str(message.guild.id)
-                print(guild_id)
-                DB = config[guild_id]['database']
-                print(DB)
-                guild = str(message.guild.name)
-                print(guild)
-                response = give_info(DB, guild_id)
-            except KeyError:
-                response = no_db_error()
-
-        await message.channel.send(embed=response)
-
-    elif message.content.startswith('!tracker add '):
-        guild_id = str(message.guild.id)
-        admin_role = config[guild_id]['admin_role']
-        user_role = config[guild_id]['user_role']
-
-        if admin_role.lower() in [a.name.lower() for a in message.author.roles]:
-            try:
-                post = message.content.split(" ")
-                validated = validate_add_input(post) 
-                if validated:
-                    guild_id = str(message.guild.id)
-                    DB = config[guild_id]['database']
-                    unique = validate_unique_url(DB, post[-1], " ".join((post[2:-1])))
-                    if unique:
-                        response = add_report(DB, " ".join(post[2:-1]), post[-1])
-                    else:
-                        response = not_unique_error()
-                else:
-                    response = no_link_error()
-            except KeyError:
-                response = no_db_error()
-        
-        await message.channel.send(embed=response)
-
-    elif message.content.startswith('!tracker get '):
-        guild_id = str(message.guild.id)
-        admin_role = config[guild_id]['admin_role'].lower()
-        user_role = config[guild_id]['user_role'].lower()
-        roles = [admin_role, user_role]
-
-        if admin_role in [a.name.lower() for a in message.author.roles] or user_role in [a.name.lower() for a in message.author.roles]:
-            post = message.content.split(" ")
-            DB = config[guild_id]['database']
-            
-            try:
-                if isinstance(int(post[-1]), int):    
-                    response = get_reports(DB, " ".join(post[2:-1]), post[-1])
-            except ValueError:
-                response = get_one_report(DB, " ".join(post[2:]))
-            except KeyError:
-                response = no_db_error()
-
-        await message.channel.send(embed=response)
-    
-    elif message.content.startswith('!tracker list all'):
-        guild_id = str(message.guild.id)
-        admin_role = config[guild_id]['admin_role'].lower()
-        user_role = config[guild_id]['user_role'].lower()
-        
-        if user_role in [a.name.lower() for a in message.author.roles] or admin_role in [a.name.lower() for a in message.author.roles]:
+            # Get guild_id and DB
             guild_id = str(message.guild.id)
-            DB = config[guild_id]['database']
+            DB = self.config[guild_id]["database"]
 
-            response = list_all_names(DB)
+            # Get admin_role and user_role
+            admin_role = self.config[guild_id]["admin_role"]
+            user_role = self.config[guild_id]["user_role"]
+        except KeyError:
+            pass
 
-        await message.channel.send(embed=response)
+        if message.content.startswith("!tracker init"):
+            if user_is_guild_admin(message):
+                response = init(message)
+                self.config.read("config.ini")
+                DB = self.config[guild_id]["database"]
+                create_table(DB)
 
-    elif message.content.startswith('!tracker'):
-        guild_id = str(message.guild.id)
-        admin_role = config[guild_id]['admin_role'].lower()
-        user_role = config[guild_id]['user_role'].lower()
-        
-        if user_role in [a.name.lower() for a in message.author.roles] or admin_role in [a.name.lower() for a in message.author.roles]:
+                await message.channel.send(embed=response)
+
+        elif message.content.startswith("!tracker set admin "):
+            if user_is_guild_admin(message):
+                post = message.content.split(" ")
+                server_role = " ".join(post[3:])
+
+                try:
+                    response = set_admin(str(message.guild.id), server_role)
+                except KeyError:
+                    response = no_db_error()
+            else:
+                response = incorrect_roles_error([admin_role])
+            self.config.read("config.ini")
+            await message.channel.send(embed=response)
+
+        elif message.content.startswith("!tracker set user "):
+            if user_is_guild_admin(message):
+                post = message.content.split(" ")
+                server_role = " ".join(post[3:])
+
+                try:
+                    response = set_user(str(message.guild.id), server_role)
+                except KeyError:
+                    response = no_db_error()
+            else:
+                response = incorrect_roles_error([admin_role])
+            self.config.read("config.ini")
+            await message.channel.send(embed=response)
+
+        elif message.content.startswith("!tracker set server "):
+            if user_is_guild_admin(message):
+                post = message.content.split(" ")
+                game_server = post[3]
+
+                try:
+                    response = set_game_server(str(message.guild.id), game_server)
+                except KeyError:
+                    response = no_db_error()
+            else:
+                response = incorrect_roles_error([admin_role])
+            self.config.read("config.ini")
+            await message.channel.send(embed=response)
+
+        elif message.content.startswith("!tracker info"):
+            if user_has_role(admin_role, message):
+                try:
+                    guild_id = str(message.guild.id)
+                    self.DB = self.config[guild_id]["database"]
+                    response = give_info(self.DB, guild_id)
+                except KeyError:
+                    response = no_db_error()
+            else:
+                response = incorrect_roles_error([admin_role])
+            await message.channel.send(embed=response)
+
+        elif message.content.startswith("!tracker add "):
+            if user_has_role(admin_role, message):
+                try:
+                    post = message.content.split(" ")
+                    validated = validate_add_input(post)
+                    if validated:
+                        guild_id = str(message.guild.id)
+                        self.DB = self.config[guild_id]["database"]
+                        coordinates = post.pop()
+                        coordinates = coordinates.replace("/", "|")
+                        link = post.pop()
+                        ign = post[2:]
+                        if len(ign) > 1:
+                            ign = " ".join(ign).lower()
+                        else:
+                            ign = ign[0].lower()
+                        unique = validate_unique_url(self.DB, link, ign)
+                        if unique:
+                            response = add_report(self.DB, ign, link, coordinates)
+                        else:
+                            response = not_unique_error()
+                    else:
+                        response = invalid_input_error()
+                except KeyError:
+                    response = no_db_error()
+            else:
+                response = incorrect_roles_error([admin_role])
+            await message.channel.send(embed=response)
+
+        elif message.content.startswith("!tracker get "):
+            if user_has_role(admin_role, message) or user_has_role(user_role, message):
+                post = message.content.split(" ")
+                DB = self.config[guild_id]["database"]
+                game_server = config[guild_id]["game_server"]
+
+                try:
+                    if isinstance(int(post[-1]), int):
+                        response = get_reports(
+                            DB, " ".join(post[2:-1]), game_server, post[-1]
+                        )
+                except ValueError:
+                    response = get_one_report(DB, " ".join(post[2:]), game_server)
+                except KeyError:
+                    response = no_db_error()
+            else:
+                response = incorrect_roles_error([user_role, admin_role])
+            await message.channel.send(embed=response)
+
+        elif message.content.startswith("!tracker delete"):
+            if user_has_role(admin_role, message):
+                guild_id = str(message.guild.id)
+                post = message.content.split(" ")
+                ign = post[2]
+                id = post[3]
+                DB = self.config[guild_id]["database"]
+                response = delete_report(DB, ign, id)
+            else:
+                response = incorrect_roles_error([admin_role])
+            await message.channel.send(embed=response)
+
+        elif message.content.startswith("!tracker list all"):
+            if user_has_role(admin_role, message) or user_has_role(user_role, message):
+                guild_id = str(message.guild.id)
+                self.DB = self.config[guild_id]["database"]
+
+                response = list_all_names(self.DB)
+            else:
+                response = incorrect_roles_error([user_role, admin_role])
+            await message.channel.send(embed=response)
+
+        elif message.content.startswith("!tracker"):
             response = give_help()
 
-        await message.channel.send(embed=response)
-    
-    elif message.content.startswith('!dev info'):
-        print(message)
-        print(message.guild.owner)
+            await message.channel.send(embed=response)
 
-        await message.delete()
+        elif message.content.startswith("!dev info"):
+            print(message)
+            print(message.guild.owner)
 
-    elif message.content.startswith('!gear '):
-        url = message.content.split(' ')[1]
-        response = get_hero_items(url)
+            await message.delete()
 
-        await message.channel.send(embed=response)
-    
-    else:
-        return
+        elif message.content.startswith("!gear "):
+            url = message.content.split(" ")[1]
+            response = get_hero_items(url)
 
-client.run(TOKEN)
+            await message.channel.send(embed=response)
+
+        else:
+            return
+
+
+client = Tracker(intents=intents)
+client.run(client.TOKEN)
