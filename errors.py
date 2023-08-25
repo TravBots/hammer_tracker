@@ -26,7 +26,7 @@ def incorrect_roles_error(required_roles: list):
     embed = discord.Embed(color=Colors.ERROR)
     embed.add_field(
         name="Error",
-        value=f"One of the following roles are required for this command:\n* {roles}",
+        value=f"One of the following roles are required for this command:\n* {roles.title()}",
     )
 
     return embed
