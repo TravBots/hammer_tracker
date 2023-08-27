@@ -57,6 +57,11 @@ class Tracker(discord.Client):
                 post = message.content.split(" ")
                 server_role = " ".join(post[3:])
 
+                if validate_role_exists(message.guild, server_role) is False:
+                    response = invalid_role_error(server_role)
+                    await message.channel.send(embed=response)
+                    return
+
                 try:
                     response = set_admin(str(message.guild.id), server_role)
                 except KeyError:
@@ -70,6 +75,11 @@ class Tracker(discord.Client):
             if user_is_guild_admin(message):
                 post = message.content.split(" ")
                 server_role = " ".join(post[3:])
+
+                if validate_role_exists(message.guild, server_role) is False:
+                    response = invalid_role_error(server_role)
+                    await message.channel.send(embed=response)
+                    return
 
                 try:
                     response = set_user(str(message.guild.id), server_role)
@@ -87,6 +97,20 @@ class Tracker(discord.Client):
 
                 try:
                     response = set_game_server(str(message.guild.id), game_server)
+                except KeyError:
+                    response = no_db_error()
+            else:
+                response = incorrect_roles_error([admin_role])
+            self.config.read("config.ini")
+            await message.channel.send(embed=response)
+
+        elif message.content.startswith("!tracker set defense channel "):
+            if user_is_guild_admin(message):
+                post = message.content.split(" ")
+                channel_id = post[4]
+
+                try:
+                    response = set_defense_channel(str(message.guild.id), channel_id)
                 except KeyError:
                     response = no_db_error()
             else:
@@ -195,6 +219,27 @@ class Tracker(discord.Client):
 
         else:
             return
+
+    async def on_scheduled_event_create(self, event):
+        # Refresh config
+        self.config.read("config.ini")
+        guild_id = str(event.guild.id)
+        defense_channel = self.config[guild_id]["defense_channel"]
+        game_server = self.config[guild_id]["game_server"]
+
+        embed = discord.Embed(color=Colors.SUCCESS)
+        x, y = event.name.replace("/", "|").split("|")
+        map_link = f"[{x}|{y}]({game_server}/position_details.php?x={x}&y={y})"
+        message = f"""
+            Submitted by: {event.creator.display_name}
+            Coordinates: {map_link}
+            Land Time: {str(event.start_time)}
+            Defense Required: {event.description}
+            """
+        embed.add_field(name="New CFD", value=message)
+
+        channel = get_channel_from_id(event.guild, defense_channel)
+        await channel.send(embed=embed)
 
 
 client = Tracker(intents=intents)

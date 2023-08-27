@@ -32,6 +32,16 @@ def incorrect_roles_error(required_roles: list):
     return embed
 
 
+def invalid_role_error(server_role: str):
+    embed = discord.Embed(color=Colors.ERROR)
+    embed.add_field(
+        name="Error",
+        value=f"The role `{server_role}` does not exist",
+    )
+
+    return embed
+
+
 def invalid_input_error():
     embed = discord.Embed(color=Colors.ERROR)
     embed.add_field(

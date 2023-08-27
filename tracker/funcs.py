@@ -77,6 +77,20 @@ def set_game_server(guild_id, game_server):
     return embed
 
 
+def set_defense_channel(guild_id, defense_channel_id):
+    config[guild_id]["defense_channel"] = defense_channel_id
+
+    with open("config.ini", "w") as conf:
+        config.write(conf)
+
+    embed = discord.Embed(color=Colors.SUCCESS)
+    embed.add_field(
+        name="Success", value="Defense Channel was set as {}".format(defense_channel_id)
+    )
+
+    return embed
+
+
 def create_table(db_name):
     conn = sqlite3.connect(db_name)
     conn.execute(
@@ -281,3 +295,7 @@ def give_info(db_name, guild_id):
     embed.add_field(name="Tracker User", value=config[guild_id]["user_role"])
 
     return embed
+
+
+def get_channel_from_id(guild: discord.Guild, channel_id: str):
+    return guild.get_channel(int(channel_id))

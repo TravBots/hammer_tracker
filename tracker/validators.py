@@ -60,6 +60,11 @@ def validate_add_input(post) -> bool:
         return False
 
 
+def validate_role_exists(guild: discord.Guild, role):
+    print(f"Validating {role}")
+    return role.lower() in [role.name.lower() for role in guild.roles]
+
+
 def user_is_guild_admin(message: discord.Message) -> bool:
     return message.author.guild_permissions.administrator
 
