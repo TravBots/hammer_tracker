@@ -44,8 +44,9 @@ class Tracker(discord.Client):
             pass
 
         if message.content.startswith("!tracker init"):
+            print("Initializing database...")
             if user_is_guild_admin(message):
-                response = init(message)
+                response = init(self.config, message)
                 self.config.read("config.ini")
                 DB = self.config[guild_id]["database"]
                 create_hammers = get_sql_by_path("sql/create_table_hammers.sql")
@@ -72,7 +73,9 @@ class Tracker(discord.Client):
                     return
 
                 try:
-                    response = set_admin(str(message.guild.id), server_role)
+                    response = set_admin(
+                        self.config, str(message.guild.id), server_role
+                    )
                 except KeyError:
                     response = no_db_error()
             else:
@@ -91,7 +94,7 @@ class Tracker(discord.Client):
                     return
 
                 try:
-                    response = set_user(str(message.guild.id), server_role)
+                    response = set_user(self.config, str(message.guild.id), server_role)
                 except KeyError:
                     response = no_db_error()
             else:
@@ -105,7 +108,9 @@ class Tracker(discord.Client):
                 game_server = post[3]
 
                 try:
-                    response = set_game_server(str(message.guild.id), game_server)
+                    response = set_game_server(
+                        self.config, str(message.guild.id), game_server
+                    )
                 except KeyError:
                     response = no_db_error()
             else:
@@ -119,7 +124,9 @@ class Tracker(discord.Client):
                 channel_id = post[4]
 
                 try:
-                    response = set_defense_channel(str(message.guild.id), channel_id)
+                    response = set_defense_channel(
+                        self.config, str(message.guild.id), channel_id
+                    )
                 except KeyError:
                     response = no_db_error()
             else:
@@ -131,8 +138,7 @@ class Tracker(discord.Client):
             if user_has_role(admin_role, message):
                 try:
                     guild_id = str(message.guild.id)
-                    self.DB = self.config[guild_id]["database"]
-                    response = give_info(self.DB, guild_id)
+                    response = give_info(self.config, guild_id)
                 except KeyError:
                     response = no_db_error()
             else:
@@ -226,6 +232,15 @@ class Tracker(discord.Client):
 
             await message.channel.send(embed=response)
 
+        elif message.content.startswith("!def list open"):
+            if user_has_role(admin_role, message) or user_has_role(user_role, message):
+                guild_id = str(message.guild.id)
+                self.DB = self.config[guild_id]["database"]
+
+                response = list_open_cfds(self.DB)
+            else:
+                response = incorrect_roles_error([user_role, admin_role])
+            await message.channel.send(embed=response)
         else:
             return
 
@@ -236,8 +251,19 @@ class Tracker(discord.Client):
         defense_channel = self.config[guild_id]["defense_channel"]
         game_server = self.config[guild_id]["game_server"]
 
-        embed = discord.Embed(color=Colors.SUCCESS)
         x, y = event.name.replace("/", "|").split("|")
+
+        create_cfd(
+            f"databases/{guild_id}.db",
+            event.creator.id,
+            event.creator.display_name,
+            event.start_time,
+            x,
+            y,
+            event.description,
+            "0",
+        )
+        embed = discord.Embed(color=Colors.SUCCESS)
         map_link = f"[{x}|{y}]({game_server}/position_details.php?x={x}&y={y})"
         message = f"""
         Submitted by: {event.creator.display_name}

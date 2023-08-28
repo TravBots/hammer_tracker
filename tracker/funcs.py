@@ -4,13 +4,8 @@ import configparser
 
 from constants import Colors
 
-config = configparser.ConfigParser()
-config.read("config.ini")
-TOKEN = config["default"]["token"]
-DB = config["default"]["database"]
 
-
-def init(message):
+def init(config, message):
     guild_name = str(message.guild.name)
     guild_id = str(message.guild.id)
     message_author = str(message.author)
@@ -35,7 +30,7 @@ def init(message):
     return embed
 
 
-def set_admin(guild_id, server_role):
+def set_admin(config, guild_id, server_role):
     config[guild_id]["admin_role"] = server_role
 
     with open("config.ini", "w") as conf:
@@ -49,7 +44,7 @@ def set_admin(guild_id, server_role):
     return embed
 
 
-def set_user(guild_id, server_role):
+def set_user(config, guild_id, server_role):
     config[guild_id]["user_role"] = server_role
 
     with open("config.ini", "w") as conf:
@@ -63,7 +58,7 @@ def set_user(guild_id, server_role):
     return embed
 
 
-def set_game_server(guild_id, game_server):
+def set_game_server(config, guild_id, game_server):
     config[guild_id]["game_server"] = game_server
 
     with open("config.ini", "w") as conf:
@@ -77,7 +72,7 @@ def set_game_server(guild_id, game_server):
     return embed
 
 
-def set_defense_channel(guild_id, defense_channel_id):
+def set_defense_channel(config, guild_id, defense_channel_id):
     config[guild_id]["defense_channel"] = defense_channel_id
 
     with open("config.ini", "w") as conf:
@@ -287,11 +282,11 @@ def give_help():
     return embed
 
 
-def give_info(db_name, guild_id):
+def give_info(config, guild_id):
     embed = discord.Embed(description="Information", color=Colors.SUCCESS)
     embed.add_field(name="Server Name:", value=config[guild_id]["server"])
     embed.add_field(name="Game Server", value=config[guild_id]["game_server"])
-    embed.add_field(name="Database Name:", value=db_name)
+    embed.add_field(name="Database Name:", value=config[guild_id]["database"])
     embed.add_field(name="Tracker Admin", value=config[guild_id]["admin_role"])
     embed.add_field(name="Tracker User", value=config[guild_id]["user_role"])
 
@@ -300,3 +295,89 @@ def give_info(db_name, guild_id):
 
 def get_channel_from_id(guild: discord.Guild, channel_id: str):
     return guild.get_channel(int(channel_id))
+
+
+def create_cfd(
+    db_name,
+    created_by_id,
+    created_by_name,
+    land_time,
+    x_coordinate,
+    y_coordinate,
+    amount_requested,
+    amount_submitted,
+):
+    conn = sqlite3.connect(db_name)
+
+    query = """
+    INSERT INTO DEFENSE_CALLS (
+        created_by_id,
+        created_by_name,
+        land_time, 
+        x_coordinate, 
+        y_coordinate, 
+        amount_requested, 
+        amount_submitted,
+        created_at 
+        ) VALUES (?,?,?,?,?,?,?,CURRENT_TIMESTAMP);
+    """
+    data = (
+        created_by_id,
+        created_by_name,
+        land_time,
+        x_coordinate,
+        y_coordinate,
+        amount_requested.replace(",", ""),
+        amount_submitted,
+    )
+
+    conn.execute(query, data)
+    conn.commit()
+    conn.close()
+
+
+def list_open_cfds(db_name):
+    conn = sqlite3.connect(db_name)
+    query = conn.execute(
+        """
+        select 
+            id, 
+            land_time, 
+            x_coordinate, 
+            y_coordinate, 
+            amount_requested, 
+            amount_submitted 
+        from defense_calls 
+        where current_timestamp < land_time;
+        """
+    )
+
+    response = ""
+    for row in query:
+        id = row[0]
+        land_time = row[1]
+        x_coordinate = row[2]
+        y_coordinate = row[3]
+        amount_requested = row[4]
+        amount_submitted = row[5]
+        values = {
+            "id": str(id),
+            "land_time": str(land_time),
+            "x_coordinate": str(x_coordinate),
+            "y_coordinate": str(y_coordinate),
+            "amount_requested": str(amount_requested),
+            "amount_submitted": str(amount_submitted),
+        }
+        for k, v in values.items():
+            response += f"**{k}**: {v}\n"
+        response += "\n"
+
+    if response != "":
+        embed = discord.Embed(title="Open Defense Calls", color=Colors.SUCCESS)
+        embed.add_field(name="Defense Calls", value=response)
+    else:
+        embed = discord.Embed(color=Colors.ERROR)
+        embed.add_field(name="Error", value="No entries found in the database")
+    conn.close()
+
+    return embed
