@@ -91,16 +91,17 @@ def set_defense_channel(guild_id, defense_channel_id):
     return embed
 
 
-def create_table(db_name):
+def get_sql_by_path(path):
+    with open(path, "r") as sql_file:
+        sql = sql_file.read()
+
+    return sql
+
+
+def execute_sql(db_name, sql):
     conn = sqlite3.connect(db_name)
-    conn.execute(
-        """CREATE TABLE IF NOT EXISTS HAMMERS
-        (ID INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
-        IGN TEXT NOT NULL,
-        LINK TEXT NOT NULL,
-        COORDINATES TEXT NOT NULL,
-        TIMESTAMP TIMESTAMP NOT NULL);"""
-    )
+    print(f"Running sql:\n{sql}")
+    conn.execute(sql)
     conn.commit()
     conn.close()
 

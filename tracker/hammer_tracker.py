@@ -48,7 +48,16 @@ class Tracker(discord.Client):
                 response = init(message)
                 self.config.read("config.ini")
                 DB = self.config[guild_id]["database"]
-                create_table(DB)
+                create_hammers = get_sql_by_path("sql/create_table_hammers.sql")
+                create_defense_calls = get_sql_by_path(
+                    "sql/create_table_defense_calls.sql"
+                )
+                create_submitted_defense = get_sql_by_path(
+                    "sql/create_table_submitted_defense.sql"
+                )
+                execute_sql(DB, create_hammers)
+                execute_sql(DB, create_defense_calls)
+                execute_sql(DB, create_submitted_defense)
 
                 await message.channel.send(embed=response)
 
@@ -231,10 +240,10 @@ class Tracker(discord.Client):
         x, y = event.name.replace("/", "|").split("|")
         map_link = f"[{x}|{y}]({game_server}/position_details.php?x={x}&y={y})"
         message = f"""
-            Submitted by: {event.creator.display_name}
-            Coordinates: {map_link}
-            Land Time: {str(event.start_time)}
-            Defense Required: {event.description}
+        Submitted by: {event.creator.display_name}
+        Coordinates: {map_link}
+        Land Time: {str(event.start_time)}
+        Defense Required: {event.description}
             """
         embed.add_field(name="New CFD", value=message)
 
