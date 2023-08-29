@@ -58,6 +58,20 @@ def set_user(config, guild_id, server_role):
     return embed
 
 
+def set_anvil(config, guild_id, server_role):
+    config[guild_id]["anvil_role"] = server_role
+
+    with open("config.ini", "w") as conf:
+        config.write(conf)
+
+    embed = discord.Embed(color=Colors.SUCCESS)
+    embed.add_field(
+        name="Success", value="Role {} set as Anvil Role".format(server_role)
+    )
+
+    return embed
+
+
 def set_game_server(config, guild_id, game_server):
     config[guild_id]["game_server"] = game_server
 
@@ -300,36 +314,51 @@ def get_channel_from_id(guild: discord.Guild, channel_id: str):
 def create_cfd(
     db_name,
     created_by_id,
+    event_id,
     created_by_name,
     land_time,
     x_coordinate,
     y_coordinate,
     amount_requested,
-    amount_submitted,
 ):
     conn = sqlite3.connect(db_name)
 
     query = """
     INSERT INTO DEFENSE_CALLS (
         created_by_id,
+        event_id,
         created_by_name,
         land_time, 
         x_coordinate, 
         y_coordinate, 
         amount_requested, 
-        amount_submitted,
-        created_at 
+        created_at
         ) VALUES (?,?,?,?,?,?,?,CURRENT_TIMESTAMP);
     """
     data = (
         created_by_id,
+        event_id,
         created_by_name,
         land_time,
         x_coordinate,
         y_coordinate,
         amount_requested.replace(",", ""),
-        amount_submitted,
     )
+
+    conn.execute(query, data)
+    conn.commit()
+    conn.close()
+
+
+def cancel_cfd(db_name, event_id):
+    conn = sqlite3.connect(db_name)
+
+    query = """
+    UPDATE DEFENSE_CALLS
+    SET CANCELLED = TRUE
+    WHERE event_id = ? RETURNING *;
+    """
+    data = (event_id,)
 
     conn.execute(query, data)
     conn.commit()
@@ -342,13 +371,15 @@ def list_open_cfds(db_name):
         """
         select 
             id, 
-            land_time, 
+            datetime(land_time, '-4 hours'), 
             x_coordinate, 
             y_coordinate, 
             amount_requested, 
             amount_submitted 
         from defense_calls 
-        where current_timestamp < land_time;
+        where current_timestamp < land_time
+        and amount_submitted < amount_requested
+        and not cancelled;
         """
     )
 
@@ -361,12 +392,13 @@ def list_open_cfds(db_name):
         amount_requested = row[4]
         amount_submitted = row[5]
         values = {
-            "id": str(id),
-            "land_time": str(land_time),
-            "x_coordinate": str(x_coordinate),
-            "y_coordinate": str(y_coordinate),
-            "amount_requested": str(amount_requested),
-            "amount_submitted": str(amount_submitted),
+            "ID": str(id),
+            "Land Time": str(land_time).split(".")[0],
+            "X-Coordinate": str(x_coordinate),
+            "Y-Coordinate": str(y_coordinate),
+            "Amount Requested": str(f"{amount_requested:,}"),
+            "Amount Submitted": str(f"{amount_submitted:,}"),
+            "Amount Remaining": str(f"{amount_requested - amount_submitted:,}"),
         }
         for k, v in values.items():
             response += f"**{k}**: {v}\n"
@@ -376,8 +408,34 @@ def list_open_cfds(db_name):
         embed = discord.Embed(title="Open Defense Calls", color=Colors.SUCCESS)
         embed.add_field(name="Defense Calls", value=response)
     else:
-        embed = discord.Embed(color=Colors.ERROR)
-        embed.add_field(name="Error", value="No entries found in the database")
+        embed = discord.Embed(color=Colors.SUCCESS)
+        embed.add_field(name="All Clear", value="No open CFDs")
+    conn.close()
+
+    return embed
+
+
+def send_defense(db_name, cfd_id: int, amount_sent: int):
+    conn = sqlite3.connect(db_name)
+    query = """
+        UPDATE DEFENSE_CALLS
+        SET amount_submitted = amount_submitted + ? 
+        WHERE id = ? returning *;
+        """
+    print(f"Executing query: {query}")
+    conn.execute(
+        query,
+        (amount_sent, cfd_id),
+    )
+
+    conn.commit()
+
+    embed = discord.Embed(color=Colors.WARNING)
+    embed.add_field(
+        name="Confirmed",
+        value=f"{amount_sent} defense registered for CFD with ID {cfd_id}",
+    )
+
     conn.close()
 
     return embed

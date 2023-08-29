@@ -40,6 +40,7 @@ class Tracker(discord.Client):
             # Get admin_role and user_role
             admin_role = self.config[guild_id]["admin_role"]
             user_role = self.config[guild_id]["user_role"]
+            anvil_role = self.config[guild_id]["anvil_role"]
         except KeyError:
             pass
 
@@ -118,22 +119,6 @@ class Tracker(discord.Client):
             self.config.read("config.ini")
             await message.channel.send(embed=response)
 
-        elif message.content.startswith("!tracker set defense channel "):
-            if user_is_guild_admin(message):
-                post = message.content.split(" ")
-                channel_id = post[4]
-
-                try:
-                    response = set_defense_channel(
-                        self.config, str(message.guild.id), channel_id
-                    )
-                except KeyError:
-                    response = no_db_error()
-            else:
-                response = incorrect_roles_error([admin_role])
-            self.config.read("config.ini")
-            await message.channel.send(embed=response)
-
         elif message.content.startswith("!tracker info"):
             if user_has_role(admin_role, message):
                 try:
@@ -178,7 +163,7 @@ class Tracker(discord.Client):
             if user_has_role(admin_role, message) or user_has_role(user_role, message):
                 post = message.content.split(" ")
                 DB = self.config[guild_id]["database"]
-                game_server = config[guild_id]["game_server"]
+                game_server = self.config[guild_id]["game_server"]
 
                 try:
                     if isinstance(int(post[-1]), int):
@@ -232,14 +217,64 @@ class Tracker(discord.Client):
 
             await message.channel.send(embed=response)
 
+        elif message.content.startswith("!def set anvil role "):
+            if user_is_guild_admin(message):
+                post = message.content.split(" ")
+                server_role = " ".join(post[4:])
+
+                if validate_role_exists(message.guild, server_role) is False:
+                    response = invalid_role_error(server_role)
+                    await message.channel.send(embed=response)
+                    return
+
+                try:
+                    response = set_anvil(
+                        self.config, str(message.guild.id), server_role
+                    )
+                except KeyError:
+                    response = no_db_error()
+            else:
+                response = incorrect_roles_error([admin_role])
+            self.config.read("config.ini")
+            await message.channel.send(embed=response)
+
+        elif message.content.startswith("!def set channel "):
+            if user_is_guild_admin(message):
+                post = message.content.split(" ")
+                channel_id = post[3]
+
+                try:
+                    response = set_defense_channel(
+                        self.config, str(message.guild.id), channel_id
+                    )
+                except KeyError:
+                    response = no_db_error()
+            else:
+                response = incorrect_roles_error([admin_role])
+            self.config.read("config.ini")
+            await message.channel.send(embed=response)
+
         elif message.content.startswith("!def list open"):
-            if user_has_role(admin_role, message) or user_has_role(user_role, message):
+            if user_has_role(anvil_role, message) or user_is_guild_admin(message):
                 guild_id = str(message.guild.id)
                 self.DB = self.config[guild_id]["database"]
 
                 response = list_open_cfds(self.DB)
             else:
                 response = incorrect_roles_error([user_role, admin_role])
+            await message.channel.send(embed=response)
+
+        elif message.content.startswith("!def send"):
+            if user_has_role(anvil_role, message) or user_is_guild_admin(message):
+                guild_id = str(message.guild.id)
+                self.DB = self.config[guild_id]["database"]
+                post = message.content.split(" ")
+                cfd_id = post[2]
+                amount_sent = int(post[3].replace(",", ""))
+
+                response = send_defense(f"databases/{guild_id}.db", cfd_id, amount_sent)
+            else:
+                response = incorrect_roles_error([anvil_role])
             await message.channel.send(embed=response)
         else:
             return
@@ -256,12 +291,12 @@ class Tracker(discord.Client):
         create_cfd(
             f"databases/{guild_id}.db",
             event.creator.id,
+            event.id,
             event.creator.display_name,
             event.start_time,
             x,
             y,
             event.description,
-            "0",
         )
         embed = discord.Embed(color=Colors.SUCCESS)
         map_link = f"[{x}|{y}]({game_server}/position_details.php?x={x}&y={y})"
@@ -275,6 +310,12 @@ class Tracker(discord.Client):
 
         channel = get_channel_from_id(event.guild, defense_channel)
         await channel.send(embed=embed)
+
+    async def on_scheduled_event_delete(self, event):
+        # Refresh config
+        self.config.read("config.ini")
+        guild_id = str(event.guild.id)
+        cancel_cfd(f"databases/{guild_id}.db", event.id)
 
 
 client = Tracker(intents=intents)
