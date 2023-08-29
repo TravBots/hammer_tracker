@@ -415,7 +415,7 @@ def list_open_cfds(db_name):
     return embed
 
 
-def send_defense(db_name, cfd_id: int, amount_sent: int):
+def send_defense(db_name, cfd_id: int, amount_sent: int, message: discord.Message):
     conn = sqlite3.connect(db_name)
     query = """
         UPDATE DEFENSE_CALLS
@@ -430,10 +430,61 @@ def send_defense(db_name, cfd_id: int, amount_sent: int):
 
     conn.commit()
 
+    conn = sqlite3.connect(db_name)
+    query = """
+        INSERT INTO SUBMITTED_DEFENSE (
+        defense_call_id,
+        submitted_by_id,
+        submitted_by_name,
+        amount_submitted
+        ) VALUES (?,?,?,?);
+        """
+    print(f"Executing query: {query}")
+    conn.execute(
+        query,
+        (cfd_id, message.author.id, message.author.name, amount_sent),
+    )
+
+    conn.commit()
+
     embed = discord.Embed(color=Colors.WARNING)
     embed.add_field(
         name="Confirmed",
         value=f"{amount_sent} defense registered for CFD with ID {cfd_id}",
+    )
+
+    conn.close()
+
+    return embed
+
+
+def get_leaderboard(db_name):
+    conn = sqlite3.connect(db_name)
+    query = """
+        select
+            submitted_by_id,
+            sum(amount_submitted)
+        from SUBMITTED_DEFENSE
+        group by 1
+        order by 2 desc 
+        limit 10;
+        """
+    print(f"Executing query: {query}")
+    rows = conn.execute(
+        query,
+        # (amount_sent, cfd_id),
+    )
+
+    conn.commit()
+
+    result = ""
+
+    for index, row in enumerate(rows):
+        result += f"{index}. <@{row[0]}> ({row[1]})\n"
+    embed = discord.Embed(color=Colors.SUCCESS)
+    embed.add_field(
+        name="Leaderboard",
+        value=result,
     )
 
     conn.close()

@@ -272,9 +272,21 @@ class Tracker(discord.Client):
                 cfd_id = post[2]
                 amount_sent = int(post[3].replace(",", ""))
 
-                response = send_defense(f"databases/{guild_id}.db", cfd_id, amount_sent)
+                response = send_defense(
+                    f"databases/{guild_id}.db", cfd_id, amount_sent, message
+                )
             else:
                 response = incorrect_roles_error([anvil_role])
+            await message.channel.send(embed=response)
+
+        elif message.content.startswith("!def leaderboard"):
+            if user_has_role(anvil_role, message) or user_is_guild_admin(message):
+                guild_id = str(message.guild.id)
+                self.DB = self.config[guild_id]["database"]
+
+                response = get_leaderboard(f"databases/{guild_id}.db")
+            else:
+                response = incorrect_roles_error([user_role, admin_role])
             await message.channel.send(embed=response)
         else:
             return
