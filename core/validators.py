@@ -1,0 +1,120 @@
+import discord
+import re
+import sqlite3
+
+from typing import List
+
+
+def roles_are_valid(message, guild_id, config) -> bool:
+    admin_role = config[guild_id]["admin_role"].lower()
+    user_role = config[guild_id]["user_role"].lower()
+    author_roles = [a.name.lower() for a in message.author.roles]
+
+    return admin_role in author_roles or user_role in author_roles
+
+
+def coordinates_are_valid(coordinates: str) -> bool:
+    MAX = 400
+    MIN = -400
+
+    slash = "/" in coordinates
+    pipe = "|" in coordinates
+
+    if slash:
+        xy = coordinates.split("/")
+    elif pipe:
+        xy = coordinates.split("|")
+    else:
+        return False
+
+    if len(xy) != 2:
+        return False
+
+    try:
+        x = int(xy[0])
+        y = int(xy[1])
+        if x > MAX or y > MAX or x < MIN or y < MIN:
+            return False
+        return True
+    except ValueError:
+        return False
+
+
+def url_is_valid(url: str):
+    pattern = (
+        "http[s]?://(?:[a-zA-Z]|[0-9]|[$-_@.&+]|[!*\(\),]|(?:%[0-9a-fA-F][0-9a-fA-F]))+"
+    )
+
+    url_is_valid = bool(re.search(pattern, url))
+
+    return url_is_valid
+
+
+def validate_unique_url(db_name, url, ign) -> bool:
+    conn = sqlite3.connect(db_name)
+
+    query = "SELECT LINK FROM HAMMERS WHERE IGN = ?;"
+    data = (ign,)
+
+    data = conn.execute(query, data)
+
+    urls = []
+
+    for row in data:
+        urls.append(row[0])
+
+    conn.close()
+
+    if url in urls:
+        unique = False
+    else:
+        unique = True
+
+    return unique
+
+
+def validate_add_input(params: List[str]) -> bool:
+    """
+    Add input is very specific. It should be a list of string values, defined as:
+    [
+        ign_part_1: str,
+        ign_part_2: str,
+        url: str,
+        coordinates: str
+    ]
+    where `coordinates` are a string such as `1|2` or `1/2`. Note that an IGN
+    can have multiple parts. This is the result of a multi-word IGN, such as
+    `Here We Go Again`
+    We'll use multiple individual validators bundled into this one convenience method
+    """
+    print(f"Validating {params}")
+
+    coordinates = params.pop()
+    url = params.pop()
+
+    if not coordinates_are_valid(coordinates):
+        return False
+
+    if not url_is_valid(url):
+        return False
+
+    return True
+
+
+def validate_role_exists(guild: discord.Guild, role):
+    print(f"Validating {role}")
+    return role.lower() in [role.name.lower() for role in guild.roles]
+
+
+def user_is_guild_admin(message: discord.Message) -> bool:
+    return message.author.guild_permissions.administrator
+
+
+def user_has_role(role, message) -> bool:
+    """
+    message: A discord.Message object, used to determine the user who sent the message
+    role: The role to check against the roles of the user who sent the message
+
+    return: boolean
+    """
+    return role.lower() in [a.name.lower() for a in message.author.roles]
