@@ -89,8 +89,8 @@ def validate_add_input(params: List[str]) -> bool:
     """
     print(f"Validating {params}")
 
-    coordinates = params.pop()
-    url = params.pop()
+    coordinates = params[-1]
+    url = params[-2]
 
     if not coordinates_are_valid(coordinates):
         return False

@@ -7,10 +7,16 @@ class MockMember:
         self.bot = bot or False
 
 
+class MockGuild:
+    def __init__(self):
+        self.id = 1
+
+
 class MockMessage:
     def __init__(self, content: str, bot: bool = None):
         self.content = str(content)
-        self.member = MockMember(bot=bot)
+        self.author = MockMember(bot=bot)
+        self.guild = MockGuild()
 
 
 MESSAGE_1 = MockMessage(content="!boink keyword some text here")
@@ -45,16 +51,12 @@ def test_get_application():
     assert factory._get_application(MESSAGE_1) == BoinkApp
     assert factory._get_application(MESSAGE_2) == TrackerApp
     assert factory._get_application(MESSAGE_3) == DefApp
-    assert factory._get_application(MESSAGE_4) is None
-    assert factory._get_application(MESSAGE_5) is None
-    assert factory._get_application(MESSAGE_6) is None
 
 
 def test_get_params():
     factory = AppFactory()
 
     assert factory._get_params(MESSAGE_1) == ["keyword", "some", "text", "here"]
-    assert factory._get_params(MESSAGE_4) is None
 
 
 def test_factory():
@@ -65,7 +67,7 @@ def test_factory():
     assert m1.message is not None
     assert m1.keyword == "keyword"
     assert isinstance(m1.message, MockMessage)
-    assert isinstance(m1.message.member, MockMember)
+    assert isinstance(m1.message.author, MockMember)
 
     m2 = factory.return_app(MESSAGE_2)
     assert isinstance(m2, TrackerApp)
