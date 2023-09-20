@@ -5,3 +5,4 @@ env/
 config.ini
 nohup.out
 __pycache__/
+.pytest*
