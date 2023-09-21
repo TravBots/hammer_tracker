@@ -4,6 +4,8 @@ import sqlite3
 
 from typing import List
 
+from constants import dev_ids
+
 
 def roles_are_valid(message, guild_id, config) -> bool:
     admin_role = config[guild_id]["admin_role"].lower()
@@ -118,3 +120,7 @@ def user_has_role(role, message) -> bool:
     return: boolean
     """
     return role.lower() in [a.name.lower() for a in message.author.roles]
+
+
+def is_dev(message) -> bool:
+    return message.author.id in dev_ids

@@ -44,7 +44,7 @@ class BoinkApp(BaseApp):
 
     async def _init(self):
         print("Initializing database...")
-        if user_is_guild_admin(self.message):
+        if is_dev(self.message) or user_is_guild_admin(self.message):
             response = init(self.config, self.message)
             self.config.read("config.ini")
             DB = self.config[self.guild_id]["database"]
@@ -68,7 +68,7 @@ class BoinkApp(BaseApp):
         # TODO: Handle getting/setting admin and user roles
         # Maybe offload it to the util function to get.
         # Change to user_is_app_admin and user_is_app_user?
-        if user_has_role(self.admin_role, self.message):
+        if is_dev(self.message) or user_has_role(self.admin_role, self.message):
             try:
                 response = give_info(self.config, self.guild_id)
             except KeyError:
@@ -82,7 +82,7 @@ class BoinkApp(BaseApp):
         # and we want `admin` as the setting_name
         # and `bot user` as the setting value
         # NOTE: This does limit setting_name to one word
-        if user_is_guild_admin(self.message):
+        if is_dev(self.message) or user_is_guild_admin(self.message):
             setting_name = params[0]
             print(f"setting_name: {setting_name}")
             setting_value = " ".join(params[1:])
@@ -123,7 +123,7 @@ class TrackerApp(BaseApp):
             await self.help()
 
     async def add(self, params):
-        if user_has_role(self.admin_role, self.message):
+        if is_dev(self.message) or user_has_role(self.admin_role, self.message):
             validated = validate_add_input(params)
             if validated:
                 guild_id = str(self.message.guild.id)
@@ -155,8 +155,10 @@ class TrackerApp(BaseApp):
         await self.message.channel.send(embed=response)
 
     async def get(self, params):
-        if user_has_role(self.admin_role, self.message) or user_has_role(
-            self.user_role, self.message
+        if (
+            is_dev(self.message)
+            or user_has_role(self.admin_role, self.message)
+            or user_has_role(self.user_role, self.message)
         ):
             DB = self.config[self.guild_id]["database"]
             game_server = self.config[self.guild_id]["game_server"]
@@ -177,7 +179,7 @@ class TrackerApp(BaseApp):
         await self.message.channel.send(embed=response)
 
     async def delete(self, params, message):
-        if user_has_role(self.admin_role, message):
+        if is_dev(message) or user_has_role(self.admin_role, message):
             guild_id = str(message.guild.id)
             print(f"Params: {params}")
             ign = params[0]
@@ -189,8 +191,10 @@ class TrackerApp(BaseApp):
         await message.channel.send(embed=response)
 
     async def list(self, message):
-        if user_has_role(self.admin_role, message) or user_has_role(
-            self.user_role, message
+        if (
+            is_dev(message)
+            or user_has_role(self.admin_role, message)
+            or user_has_role(self.user_role, message)
         ):
             guild_id = str(message.guild.id)
             self.DB = self.config[guild_id]["database"]
@@ -219,7 +223,11 @@ class DefApp(BaseApp):
             await self.leaderboard(self.message)
 
     async def list(self, message):
-        if user_has_role(self.anvil_role, message) or user_is_guild_admin(message):
+        if (
+            is_dev(message)
+            or user_has_role(self.anvil_role, message)
+            or user_is_guild_admin(message)
+        ):
             guild_id = str(message.guild.id)
             self.DB = self.config[guild_id]["database"]
 
@@ -229,7 +237,11 @@ class DefApp(BaseApp):
         await message.channel.send(embed=response)
 
     async def send(self, message, params):
-        if user_has_role(self.anvil_role, message) or user_is_guild_admin(message):
+        if (
+            is_dev(message)
+            or user_has_role(self.anvil_role, message)
+            or user_is_guild_admin(message)
+        ):
             guild_id = str(message.guild.id)
             self.DB = self.config[guild_id]["database"]
             print(f"Params: {params}")
@@ -244,7 +256,11 @@ class DefApp(BaseApp):
         await message.channel.send(embed=response)
 
     async def leaderboard(self, message):
-        if user_has_role(self.anvil_role, message) or user_is_guild_admin(message):
+        if (
+            is_dev(message)
+            or user_has_role(self.anvil_role, message)
+            or user_is_guild_admin(message)
+        ):
             guild_id = str(message.guild.id)
             self.DB = self.config[guild_id]["database"]
 

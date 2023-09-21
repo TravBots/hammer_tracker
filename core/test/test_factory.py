@@ -1,22 +1,7 @@
 from factory import AppFactory
 from apps import BoinkApp, DefApp, TrackerApp
 
-
-class MockMember:
-    def __init__(self, bot: bool):
-        self.bot = bot or False
-
-
-class MockGuild:
-    def __init__(self):
-        self.id = 1
-
-
-class MockMessage:
-    def __init__(self, content: str, bot: bool = None):
-        self.content = str(content)
-        self.author = MockMember(bot=bot)
-        self.guild = MockGuild()
+from mocks import *
 
 
 MESSAGE_1 = MockMessage(content="!boink keyword some text here")
