@@ -34,24 +34,24 @@ class Core(discord.Client):
         if app is not None:
             await app.run()
 
-    async def on_scheduled_event_create(self, event):
+    async def on_scheduled_event_create(self, event: discord.ScheduledEvent):
         # Refresh config
         self.config.read("config.ini")
         guild_id = str(event.guild.id)
         defense_channel = self.config[guild_id]["defense_channel"]
         game_server = self.config[guild_id]["game_server"]
 
-        x, y = event.name.replace("/", "|").split("|")
+        x, y = event.location.replace("/", "|").split("|")
 
         create_cfd(
-            f"databases/{guild_id}.db",
-            event.creator.id,
-            event.id,
-            event.creator.display_name,
-            event.start_time,
-            x,
-            y,
-            event.description,
+            db_name=f"databases/{guild_id}.db",
+            created_by_id=event.creator.id,
+            event_id=event.id,
+            created_by_name=event.creator.display_name,
+            land_time=event.start_time,
+            x_coordinate=x,
+            y_coordinate=y,
+            amount_requested=event.description,
         )
         embed = discord.Embed(color=Colors.SUCCESS)
         map_link = f"[{x}|{y}]({game_server}/position_details.php?x={x}&y={y})"
@@ -64,7 +64,7 @@ class Core(discord.Client):
         embed.add_field(name="New CFD", value=message)
 
         channel = get_channel_from_id(event.guild, defense_channel)
-        await channel.send(embed=embed)
+        await channel.send(content=event.name, embed=embed)
 
     async def on_scheduled_event_delete(self, event):
         # Refresh config
