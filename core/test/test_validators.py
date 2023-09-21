@@ -1,5 +1,7 @@
 from validators import *
 
+from mocks import *
+
 
 def test_coordinates_are_valid():
     assert coordinates_are_valid("55/55")
@@ -35,3 +37,17 @@ def test_validate_add_input():
     assert not validate_add_input(invalid_url)
     assert not validate_add_input(invalid_coordinates)
     assert not validate_add_input(invalid_url_multi_part_ign)
+
+
+def test_is_dev():
+    MESSAGE_1 = MockMessage(
+        content="!boink keyword some text here", id=177473204011401216
+    )
+    MESSAGE_2 = MockMessage(
+        content="!tracker keyword some text here", id=322602660555653151
+    )
+    MESSAGE_3 = MockMessage(content="!def keyword some text here")
+
+    assert is_dev(MESSAGE_1)
+    assert is_dev(MESSAGE_2)
+    assert not is_dev(MESSAGE_3)
