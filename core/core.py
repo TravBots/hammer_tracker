@@ -1,6 +1,7 @@
 import discord
 import configparser
 from typing import Any
+from zoneinfo import ZoneInfo
 
 from errors import *
 from funcs import *
@@ -55,11 +56,12 @@ class Core(discord.Client):
         )
         embed = discord.Embed(color=Colors.SUCCESS)
         map_link = f"[{x}|{y}]({game_server}/position_details.php?x={x}&y={y})"
+        land_time = event.start_time.astimezone(ZoneInfo("US/Eastern"))
         message = f"""
         ID: {cfd_id}
         Submitted by: {event.creator.display_name}
         Coordinates: {map_link}
-        Land Time: {str(event.start_time).split(".")[0]}
+        Land Time: {str(land_time).split(".")[0]}
         Defense Required: {int(event.description):,}
             """
         embed.add_field(name=f"New CFD: {event.name}", value=message)
