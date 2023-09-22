@@ -304,14 +304,13 @@ def list_open_cfds(db_name):
         """
         select 
             id, 
-            datetime(land_time, '-4 hours'), 
+            datetime(land_time, 'localtime'), 
             x_coordinate, 
             y_coordinate, 
             amount_requested, 
             amount_submitted 
         from defense_calls 
         where current_timestamp < land_time
-        and amount_submitted < amount_requested
         and not cancelled;
         """
     )
@@ -326,11 +325,11 @@ def list_open_cfds(db_name):
         amount_submitted = row[5]
         values = f"""
         **ID: {id}**
-        Time:\n{str(land_time).split(".")[0]}
+        Land Time:\n{str(land_time).split(".")[0]}
         Location: {x_coordinate}|{y_coordinate}
         Requested: {amount_requested:,}
         Submitted: {amount_submitted:,}
-        Remaining: {amount_requested - amount_submitted:,}
+        Remaining: __{amount_requested - amount_submitted:,}__
         """
         response.append(values)
 
@@ -367,17 +366,30 @@ def send_defense(db_name, cfd_id: int, amount_sent: int, message: discord.Messag
         WHERE id = ? returning amount_requested, amount_submitted;
         """
     print(f"Executing query: {query}")
-    sent_def = conn.execute(
-        query,
-        (amount_sent, cfd_id),
-    )
+    try:
+        sent_def = conn.execute(
+            query,
+            (amount_sent, cfd_id),
+        )
 
-    sent_def = sent_def.fetchone()
-    amount_requested = sent_def[0]
-    amount_submitted = sent_def[1]
-    print(amount_requested, amount_submitted)
+        sent_def = sent_def.fetchone()
+        amount_requested = sent_def[0]
+        amount_submitted = sent_def[1]
+        print(amount_requested, amount_submitted)
 
-    conn.commit()
+        conn.commit()
+    except TypeError:
+        """TypeError if the provided CFD ID doesn't exist, as sent_def is then None,
+        which is not subscriptable. The error is on: amount_requested = sent_def[0]"""
+        conn.close()
+
+        embed = discord.Embed(color=Colors.ERROR)
+        embed.add_field(
+            name="Invalid CFD",
+            value=f"The CFD with ID {cfd_id} does not exist. Try `!def list` to see open CFDs.",
+        )
+
+        return embed
 
     conn = sqlite3.connect(db_name)
     query = """
