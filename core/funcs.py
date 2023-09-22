@@ -30,76 +30,6 @@ def init(config, message):
     return embed
 
 
-def set_admin(config, guild_id, server_role):
-    config[guild_id]["admin_role"] = server_role
-
-    with open("config.ini", "w") as conf:
-        config.write(conf)
-
-    embed = discord.Embed(color=Colors.SUCCESS)
-    embed.add_field(
-        name="Success", value="Role {} set as Tracker Admin".format(server_role)
-    )
-
-    return embed
-
-
-def set_user(config, guild_id, server_role):
-    config[guild_id]["user_role"] = server_role
-
-    with open("config.ini", "w") as conf:
-        config.write(conf)
-
-    embed = discord.Embed(color=Colors.SUCCESS)
-    embed.add_field(
-        name="Success", value="Role {} set as Tracker User".format(server_role)
-    )
-
-    return embed
-
-
-def set_anvil(config, guild_id, server_role):
-    config[guild_id]["anvil_role"] = server_role
-
-    with open("config.ini", "w") as conf:
-        config.write(conf)
-
-    embed = discord.Embed(color=Colors.SUCCESS)
-    embed.add_field(
-        name="Success", value="Role {} set as Anvil Role".format(server_role)
-    )
-
-    return embed
-
-
-def set_game_server(config, guild_id, game_server):
-    config[guild_id]["game_server"] = game_server
-
-    with open("config.ini", "w") as conf:
-        config.write(conf)
-
-    embed = discord.Embed(color=Colors.SUCCESS)
-    embed.add_field(
-        name="Success", value="Game server was set as {}".format(game_server)
-    )
-
-    return embed
-
-
-def set_defense_channel(config, guild_id, defense_channel_id):
-    config[guild_id]["defense_channel"] = defense_channel_id
-
-    with open("config.ini", "w") as conf:
-        config.write(conf)
-
-    embed = discord.Embed(color=Colors.SUCCESS)
-    embed.add_field(
-        name="Success", value="Defense Channel was set as {}".format(defense_channel_id)
-    )
-
-    return embed
-
-
 def get_sql_by_path(path):
     with open(path, "r") as sql_file:
         sql = sql_file.read()
@@ -401,7 +331,7 @@ def list_open_cfds(db_name):
             "Amount Remaining": str(f"{amount_requested - amount_submitted:,}"),
         }
         for k, v in values.items():
-            response += f"**{k}**: {v}\n"
+            response += f"{k}: {v}\n"
         response += "\n"
 
     if response != "":
