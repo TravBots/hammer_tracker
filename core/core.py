@@ -64,7 +64,8 @@ class Core(discord.Client):
         embed.add_field(name="New CFD", value=message)
 
         channel = get_channel_from_id(event.guild, defense_channel)
-        await channel.send(content=event.name, embed=embed)
+        cfd_message = await channel.send(embed=embed)
+        await channel.create_thread(name=event.name, message=cfd_message)
 
     async def on_scheduled_event_delete(self, event):
         # Refresh config
