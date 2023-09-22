@@ -263,7 +263,7 @@ def create_cfd(
         y_coordinate, 
         amount_requested, 
         created_at
-        ) VALUES (?,?,?,?,?,?,?,CURRENT_TIMESTAMP);
+        ) VALUES (?,?,?,?,?,?,?,CURRENT_TIMESTAMP) RETURNING *;
     """
     data = (
         created_by_id,
@@ -275,9 +275,12 @@ def create_cfd(
         amount_requested.replace(",", ""),
     )
 
-    conn.execute(query, data)
+    cfd = conn.execute(query, data)
+    id = cfd.fetchone()[0]
     conn.commit()
     conn.close()
+
+    return id
 
 
 def cancel_cfd(db_name, event_id):
@@ -361,13 +364,18 @@ def send_defense(db_name, cfd_id: int, amount_sent: int, message: discord.Messag
     query = """
         UPDATE DEFENSE_CALLS
         SET amount_submitted = amount_submitted + ? 
-        WHERE id = ? returning *;
+        WHERE id = ? returning amount_requested, amount_submitted;
         """
     print(f"Executing query: {query}")
-    conn.execute(
+    sent_def = conn.execute(
         query,
         (amount_sent, cfd_id),
     )
+
+    sent_def = sent_def.fetchone()
+    amount_requested = sent_def[0]
+    amount_submitted = sent_def[1]
+    print(amount_requested, amount_submitted)
 
     conn.commit()
 
@@ -391,7 +399,7 @@ def send_defense(db_name, cfd_id: int, amount_sent: int, message: discord.Messag
     embed = discord.Embed(color=Colors.WARNING)
     embed.add_field(
         name="Confirmed",
-        value=f"{amount_sent} defense registered for CFD with ID {cfd_id}",
+        value=f"{amount_sent:,} defense registered for CFD with ID {cfd_id}.\n**{amount_requested-amount_submitted:,} remaining**",
     )
 
     conn.close()
@@ -421,7 +429,7 @@ def get_leaderboard(db_name):
     result = ""
 
     for index, row in enumerate(rows):
-        result += f"{index}. <@{row[0]}> ({row[1]})\n"
+        result += f"{index}. <@{row[0]}> ({row[1]:,})\n"
     embed = discord.Embed(color=Colors.SUCCESS)
     embed.add_field(
         name="Leaderboard",

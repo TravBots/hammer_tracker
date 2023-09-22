@@ -43,7 +43,7 @@ class Core(discord.Client):
 
         x, y = event.location.replace("/", "|").split("|")
 
-        create_cfd(
+        cfd_id = create_cfd(
             db_name=f"databases/{guild_id}.db",
             created_by_id=event.creator.id,
             event_id=event.id,
@@ -56,12 +56,13 @@ class Core(discord.Client):
         embed = discord.Embed(color=Colors.SUCCESS)
         map_link = f"[{x}|{y}]({game_server}/position_details.php?x={x}&y={y})"
         message = f"""
+        ID: {cfd_id}
         Submitted by: {event.creator.display_name}
         Coordinates: {map_link}
-        Land Time: {str(event.start_time)}
-        Defense Required: {event.description}
+        Land Time: {str(event.start_time).split(".")[0]}
+        Defense Required: {int(event.description):,}
             """
-        embed.add_field(name="New CFD", value=message)
+        embed.add_field(name=f"New CFD: {event.name}", value=message)
 
         channel = get_channel_from_id(event.guild, defense_channel)
         cfd_message = await channel.send(embed=embed)
