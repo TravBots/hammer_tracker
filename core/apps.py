@@ -41,6 +41,10 @@ class BoinkApp(BaseApp):
             await self._info()
         elif self.keyword == "set":
             await self._set_config_value(self.params)
+        else:
+            print(
+                f"{self.keyword} is not a valid command for {self.__class__.__name__}"
+            )
 
     async def _init(self):
         print("Initializing database...")
@@ -120,6 +124,9 @@ class TrackerApp(BaseApp):
         elif self.keyword == "list":
             await self.list(self.message)
         else:
+            print(
+                f"{self.keyword} is not a valid command for {self.__class__.__name__}"
+            )
             await self.help()
 
     async def add(self, params):
@@ -221,6 +228,10 @@ class DefApp(BaseApp):
             await self.send(self.message, self.params)
         elif self.keyword == "leaderboard":
             await self.leaderboard(self.message)
+        else:
+            print(
+                f"{self.keyword} is not a valid command for {self.__class__.__name__}"
+            )
 
     async def list(self, message):
         if (
