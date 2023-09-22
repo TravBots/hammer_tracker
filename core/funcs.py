@@ -313,7 +313,7 @@ def list_open_cfds(db_name):
         """
     )
 
-    response = ""
+    response = []
     for row in query:
         id = row[0]
         land_time = row[1]
@@ -321,22 +321,33 @@ def list_open_cfds(db_name):
         y_coordinate = row[3]
         amount_requested = row[4]
         amount_submitted = row[5]
-        values = {
-            "ID": str(id),
-            "Land Time": str(land_time).split(".")[0],
-            "X-Coordinate": str(x_coordinate),
-            "Y-Coordinate": str(y_coordinate),
-            "Amount Requested": str(f"{amount_requested:,}"),
-            "Amount Submitted": str(f"{amount_submitted:,}"),
-            "Amount Remaining": str(f"{amount_requested - amount_submitted:,}"),
-        }
-        for k, v in values.items():
-            response += f"{k}: {v}\n"
-        response += "\n"
+        values = f"""
+        **ID: {id}**
+        Time:\n{str(land_time).split(".")[0]}
+        Location: {x_coordinate}|{y_coordinate}
+        Requested: {amount_requested:,}
+        Submitted: {amount_submitted:,}
+        Remaining: {amount_requested - amount_submitted:,}
+        """
+        response.append(values)
 
-    if response != "":
+    if len(response) > 0:
         embed = discord.Embed(title="Open Defense Calls", color=Colors.SUCCESS)
-        embed.add_field(name="Defense Calls", value=response)
+
+        max_size = 6000
+        cumulative_size = len(embed.title)
+
+        for index, cfd in enumerate(response):
+            print(f"Cumulative size: {cumulative_size}")
+            cumulative_size += len(cfd)
+            if cumulative_size < max_size:
+                embed.add_field(
+                    name="\u200b",  # You can't have an empty name
+                    value=response[index],
+                    inline=True,
+                )
+            else:
+                print(f"Error: Embed total size would be {cumulative_size} characters")
     else:
         embed = discord.Embed(color=Colors.SUCCESS)
         embed.add_field(name="All Clear", value="No open CFDs")
