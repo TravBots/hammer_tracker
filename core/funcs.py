@@ -312,18 +312,21 @@ def insert_defense_thread(db_name, defense_thread_id, cfd_id, name, jump_url):
     conn.close()
 
 
-def list_open_cfds(db_name):
+def list_open_cfds(db_name, game_server):
     conn = sqlite3.connect(db_name)
     query = conn.execute(
         """
         select 
-            id, 
-            datetime(land_time, 'localtime'), 
-            x_coordinate, 
-            y_coordinate, 
-            amount_requested, 
-            amount_submitted 
-        from defense_calls 
+            dc.id, 
+            datetime(dc.land_time, 'localtime'), 
+            dc.x_coordinate, 
+            dc.y_coordinate, 
+            dc.amount_requested, 
+            dc.amount_submitted,
+            dt.jump_url
+        from defense_calls dc
+        join defense_threads dt
+            on dc.id = dt.defense_call_id
         where current_timestamp < land_time
         and not cancelled;
         """
@@ -337,10 +340,12 @@ def list_open_cfds(db_name):
         y_coordinate = row[3]
         amount_requested = row[4]
         amount_submitted = row[5]
+        jump_url = row[6]
         values = f"""
         **ID: {id}**
         Land Time:\n{str(land_time).split(".")[0]}
-        Location: {x_coordinate}|{y_coordinate}
+        Thread: {jump_url}
+        Location: [{x_coordinate}|{y_coordinate}]({game_server}/position_details.php?x={x_coordinate}&y={y_coordinate})
         Requested: {amount_requested:,}
         Submitted: {amount_submitted:,}
         Remaining: __{amount_requested - amount_submitted:,}__

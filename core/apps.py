@@ -14,6 +14,7 @@ class BaseApp:
     ):
         self.message = message
         self.guild_id = str(self.message.guild.id)
+        self.db_path = f"databases/{self.guild_id}.db"
         self.keyword = params[0]
         self.params = params[1:]
         self.config = config
@@ -232,6 +233,8 @@ class DefApp(BaseApp):
             await self.send(self.message, self.params)
         elif self.keyword == "leaderboard":
             await self.leaderboard(self.message)
+        elif self.keyword == "log":
+            await self.log(self.message)
         else:
             print(
                 f"{self.keyword} is not a valid command for {self.__class__.__name__}"
@@ -246,7 +249,8 @@ class DefApp(BaseApp):
             guild_id = str(message.guild.id)
             self.DB = self.config[guild_id]["database"]
 
-            response = list_open_cfds(self.DB)
+            game_server = self.config[self.guild_id]["game_server"]
+            response = list_open_cfds(self.DB, game_server)
         else:
             response = incorrect_roles_error([self.user_role, self.admin_role])
         await message.channel.send(embed=response)
@@ -262,14 +266,10 @@ class DefApp(BaseApp):
                 cfd_id = self._get_cfd_id_from_thread_id(message.channel.id)
             else:
                 cfd_id = params[0]
-            guild_id = str(message.guild.id)
-            self.DB = self.config[guild_id]["database"]
             print(f"Params: {params}")
             amount_sent = int(params[-1].replace(",", ""))
 
-            response = send_defense(
-                f"databases/{guild_id}.db", cfd_id, amount_sent, message
-            )
+            response = send_defense(self.db_path, cfd_id, amount_sent, message)
         else:
             response = incorrect_roles_error([self.anvil_role])
         await message.channel.send(embed=response)
@@ -283,15 +283,43 @@ class DefApp(BaseApp):
             guild_id = str(message.guild.id)
             self.DB = self.config[guild_id]["database"]
 
-            response = get_leaderboard(f"databases/{guild_id}.db")
+            response = get_leaderboard(self.db_path)
         else:
             response = incorrect_roles_error([self.user_role, self.admin_role])
 
         await message.channel.send(embed=response)
 
+    async def log(self, message: discord.Message):
+        if (
+            is_dev(message)
+            or user_has_role(self.anvil_role, message)
+            or user_is_guild_admin(message)
+        ):
+            if isinstance(message.channel, discord.Thread):
+                cfd_id = self._get_cfd_id_from_thread_id(message.channel.id)
+                query = "select submitted_by_id, amount_submitted, datetime(submitted_at, 'localtime') from submitted_defense where defense_call_id = ?"
+                conn = sqlite3.connect(self.db_path)
+                data = (cfd_id,)
+                rows = conn.execute(query, data)
+
+                result = ""
+
+                for index, row in enumerate(rows):
+                    print(row)
+                    result += f"{index}. <@{row[0]}> ({row[1]:,} @ {row[2]})\n"
+                conn.close()
+
+                embed = discord.Embed(color=Colors.SUCCESS)
+                embed.add_field(
+                    name="Defense submitted to this CFD",
+                    value=result,
+                )
+
+                await message.channel.send(embed=embed)
+
     def _get_cfd_id_from_thread_id(self, thread_id: int):
         query = "select defense_call_id from defense_threads where id = ?"
-        conn = sqlite3.connect(f"databases/{self.guild_id}.db")
+        conn = sqlite3.connect(self.db_path)
         data = (thread_id,)
         result = conn.execute(query, data)
         cfd_id = result.fetchone()[0]
