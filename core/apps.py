@@ -58,11 +58,15 @@ class BoinkApp(BaseApp):
             create_submitted_defense = get_sql_by_path(
                 "sql/create_table_submitted_defense.sql"
             )
+            create_defense_threads = get_sql_by_path(
+                "sql/create_table_defense_threads.sql"
+            )
 
             for query in [
                 create_hammers,
                 create_defense_calls,
                 create_submitted_defense,
+                create_defense_threads,
             ]:
                 execute_sql(DB, query)
 
@@ -247,17 +251,21 @@ class DefApp(BaseApp):
             response = incorrect_roles_error([self.user_role, self.admin_role])
         await message.channel.send(embed=response)
 
-    async def send(self, message, params):
+    async def send(self, message: discord.Message, params):
         if (
             is_dev(message)
             or user_has_role(self.anvil_role, message)
             or user_is_guild_admin(message)
         ):
+            if isinstance(message.channel, discord.Thread):
+                print("Message is in a thread")
+                cfd_id = self._get_cfd_id_from_thread_id(message.channel.id)
+            else:
+                cfd_id = params[0]
             guild_id = str(message.guild.id)
             self.DB = self.config[guild_id]["database"]
             print(f"Params: {params}")
-            cfd_id = params[0]
-            amount_sent = int(params[1].replace(",", ""))
+            amount_sent = int(params[-1].replace(",", ""))
 
             response = send_defense(
                 f"databases/{guild_id}.db", cfd_id, amount_sent, message
@@ -280,6 +288,15 @@ class DefApp(BaseApp):
             response = incorrect_roles_error([self.user_role, self.admin_role])
 
         await message.channel.send(embed=response)
+
+    def _get_cfd_id_from_thread_id(self, thread_id: int):
+        query = "select defense_call_id from defense_threads where id = ?"
+        conn = sqlite3.connect(f"databases/{self.guild_id}.db")
+        data = (thread_id,)
+        result = conn.execute(query, data)
+        cfd_id = result.fetchone()[0]
+        conn.close()
+        return cfd_id
 
 
 class Applications:

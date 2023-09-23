@@ -298,6 +298,20 @@ def cancel_cfd(db_name, event_id):
     conn.close()
 
 
+def insert_defense_thread(db_name, defense_thread_id, cfd_id, name, jump_url):
+    conn = sqlite3.connect(db_name)
+
+    query = "INSERT INTO DEFENSE_THREADS (id,defense_call_id,name,jump_url) VALUES (?,?,?,?);"
+    data = (defense_thread_id, cfd_id, name, jump_url)
+
+    conn.execute(query, data)
+    conn.commit()
+    print(
+        f"Inserted record into DEFENSE_THREADS:\n{defense_thread_id}\n({cfd_id}\n{name}\n{jump_url})"
+    )
+    conn.close()
+
+
 def list_open_cfds(db_name):
     conn = sqlite3.connect(db_name)
     query = conn.execute(

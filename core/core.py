@@ -69,6 +69,15 @@ class Core(discord.Client):
         channel = get_channel_from_id(event.guild, defense_channel)
         cfd_message = await channel.send(embed=embed)
         thread = await channel.create_thread(name=event.name, message=cfd_message)
+
+        insert_defense_thread(
+            db_name=f"databases/{guild_id}.db",
+            defense_thread_id=thread.id,
+            cfd_id=cfd_id,
+            name=thread.name,
+            jump_url=thread.jump_url,
+        )
+
         await thread.send(
             content="Respond to this CFD in the thread below :point_down:"
         )
