@@ -3,10 +3,10 @@ import configparser
 from typing import Any
 from zoneinfo import ZoneInfo
 
-from errors import *
+from utils.errors import *
 from funcs import *
-from hero import *
-from validators import *
+from utils.hero import *
+from utils.validators import *
 
 from factory import AppFactory
 
