@@ -102,7 +102,7 @@ class Core(discord.Client):
         if after.status == discord.EventStatus.active:
             await after.end()
 
-    @tasks.loop(minutes=10.0)
+    @tasks.loop(seconds=10.0)
     async def close_threads(self):
         # Get defense discord.Channel from config channel
         # Get threads in Channel
@@ -132,9 +132,12 @@ class Core(discord.Client):
                         data = (str(thread.id),)
                         # fmt: on
                         rows = conn.execute(query, data)
+                        cfd_thread = rows.fetchone()
+                        if cfd_thread is None:
+                            return
 
                         land_time = datetime.strptime(
-                            rows.fetchone()[0].split(".")[0], "%Y-%m-%d %H:%M:%S"
+                            cfd_thread[0].split(".")[0], "%Y-%m-%d %H:%M:%S"
                         )
                         if land_time < datetime.utcnow():
                             print(f"Archiving thread {thread.name}")
