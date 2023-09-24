@@ -1,6 +1,7 @@
 import discord
 from discord.ext import tasks
 import configparser
+from datetime import datetime, timezone
 from typing import Any
 from zoneinfo import ZoneInfo
 
@@ -101,31 +102,45 @@ class Core(discord.Client):
         if after.status == discord.EventStatus.active:
             await after.end()
 
-    @tasks.loop(seconds=5.0)
+    @tasks.loop(minutes=10.0)
     async def close_threads(self):
+        # Get defense discord.Channel from config channel
+        # Get threads in Channel
+        # For each thread, get associated cfd
+        # If cfd land_time is in the past, archive the thread
         for guild in client.guilds:
             try:
                 if self.config[str(guild.id)]["clean_up_threads"].lower() == "true":
-                    print(f"Cleaning up threads for {guild}")
-                channel = get_channel_from_id(
-                    guild, self.config[str(guild.id)]["defense_channel"]
-                )
+                    channel = get_channel_from_id(
+                        guild, self.config[str(guild.id)]["defense_channel"]
+                    )
 
-                for thread in channel.threads:
-                    query = """
-                    select 
-                        dt.defense_call_id, 
-                        dc.land_time 
-                    from defense_threads dt 
-                    join defense_calls dc 
-                        on dt.defense_call_id = dc.id 
-                    where dc.land_time < CURRENT_TIMESTAMP;"""
+                    if len(channel.threads) == 0:
+                        return
+
+                    print(f"Cleaning up threads for {guild}")
                     conn = sqlite3.connect(f"databases/{guild.id}.db")
-                    rows = conn.execute(query)
-                    print(thread.name, thread.archived)
-                    await thread.edit(archived=True)
+                    for thread in channel.threads:
+                        query = """
+                        select 
+                            dc.land_time 
+                        from defense_threads dt 
+                        join defense_calls dc 
+                            on dt.defense_call_id = dc.id 
+                        where dt.id = ?;"""
+                        # fmt: off
+                        data = (str(thread.id),)
+                        # fmt: on
+                        rows = conn.execute(query, data)
+
+                        land_time = datetime.strptime(
+                            rows.fetchone()[0].split(".")[0], "%Y-%m-%d %H:%M:%S"
+                        )
+                        if land_time < datetime.utcnow():
+                            print(f"Archiving thread {thread.name}")
+                            await thread.edit(archived=True)
             except KeyError:
-                print(f"Failed the clean up thread for {guild}")
+                print(f"Failed to clean up threads for {guild}")
 
 
 client = Core(intents=intents)
