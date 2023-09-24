@@ -2,7 +2,7 @@ import sqlite3
 import discord
 import configparser
 
-from constants import Colors
+from utils.constants import Colors
 
 
 def init(config, message):

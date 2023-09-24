@@ -4,7 +4,7 @@ import sqlite3
 
 from typing import List
 
-from constants import dev_ids
+from utils.constants import dev_ids
 
 
 def roles_are_valid(message, guild_id, config) -> bool:

@@ -1,6 +1,6 @@
 import discord
 
-from constants import Colors
+from utils.constants import Colors
 
 
 def no_db_error():

@@ -1,4 +1,4 @@
-from validators import *
+from utils.validators import *
 
 from mocks import *
 
