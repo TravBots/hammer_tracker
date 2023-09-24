@@ -116,7 +116,7 @@ class Core(discord.Client):
                     )
 
                     if len(channel.threads) == 0:
-                        return
+                        continue
 
                     print(f"Cleaning up threads for {guild}")
                     conn = sqlite3.connect(f"databases/{guild.id}.db")
