@@ -241,6 +241,10 @@ def get_channel_from_id(guild: discord.Guild, channel_id: str):
     return guild.get_channel(int(channel_id))
 
 
+def get_thread_from_id(guild: discord.Guild, thread_id: str):
+    return guild.get_thread(int(thread_id))
+
+
 def create_cfd(
     db_name,
     created_by_id,

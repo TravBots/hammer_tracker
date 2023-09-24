@@ -1,4 +1,5 @@
 import discord
+from discord.ext import tasks
 import configparser
 from typing import Any
 from zoneinfo import ZoneInfo
@@ -22,12 +23,15 @@ class Core(discord.Client):
         **options: Any,
     ) -> None:
         super().__init__(intents=intents, **options)
-        self.config = configparser.ConfigParser()
+        self.config: configparser.ConfigParser = configparser.ConfigParser()
         self.config.read("config.ini")
 
         self.token = self.config["default"]["token"]
 
         self.factory = AppFactory()
+
+    async def setup_hook(self):
+        self.close_threads.start()
 
     async def on_message(self, message):
         # Does mixing async with sync code like this mess anything up?
@@ -96,6 +100,32 @@ class Core(discord.Client):
         print(after.status)
         if after.status == discord.EventStatus.active:
             await after.end()
+
+    @tasks.loop(seconds=5.0)
+    async def close_threads(self):
+        for guild in client.guilds:
+            try:
+                if self.config[str(guild.id)]["clean_up_threads"].lower() == "true":
+                    print(f"Cleaning up threads for {guild}")
+                channel = get_channel_from_id(
+                    guild, self.config[str(guild.id)]["defense_channel"]
+                )
+
+                for thread in channel.threads:
+                    query = """
+                    select 
+                        dt.defense_call_id, 
+                        dc.land_time 
+                    from defense_threads dt 
+                    join defense_calls dc 
+                        on dt.defense_call_id = dc.id 
+                    where dc.land_time < CURRENT_TIMESTAMP;"""
+                    conn = sqlite3.connect(f"databases/{guild.id}.db")
+                    rows = conn.execute(query)
+                    print(thread.name, thread.archived)
+                    await thread.edit(archived=True)
+            except KeyError:
+                print(f"Failed the clean up thread for {guild}")
 
 
 client = Core(intents=intents)
