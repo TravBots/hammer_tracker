@@ -37,9 +37,8 @@ class Core(discord.Client):
 
     async def setup_hook(self):
         self.close_threads.start()
-        for guild in client.guilds:
-            self.tree.copy_global_to(guild=guild.id)
-            await self.tree.sync(guild=guild.id)
+
+        await self.tree.sync()
 
     async def on_message(self, message):
         # Does mixing async with sync code like this mess anything up?
