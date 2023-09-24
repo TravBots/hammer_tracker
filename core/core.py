@@ -102,7 +102,7 @@ class Core(discord.Client):
         if after.status == discord.EventStatus.active:
             await after.end()
 
-    @tasks.loop(seconds=10.0)
+    @tasks.loop(minutes=10.0)
     async def close_threads(self):
         # Get defense discord.Channel from config channel
         # Get threads in Channel
