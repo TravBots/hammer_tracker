@@ -134,7 +134,7 @@ class Core(discord.Client):
                         rows = conn.execute(query, data)
                         cfd_thread = rows.fetchone()
                         if cfd_thread is None:
-                            return
+                            continue
 
                         land_time = datetime.strptime(
                             cfd_thread[0].split(".")[0], "%Y-%m-%d %H:%M:%S"
