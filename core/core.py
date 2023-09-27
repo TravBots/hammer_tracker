@@ -40,11 +40,21 @@ class Core(discord.Client):
 
         await self.tree.sync()
 
-    async def on_message(self, message):
+    async def on_message(self, message: discord.Message):
         # Does mixing async with sync code like this mess anything up?
         app = self.factory.return_app(message)
         if app is not None:
             await app.run()
+
+        if message.content.startswith("!link"):
+            x, y = message.content.split(" ")[1].split("/")
+            game_server = self.config[str(message.guild.id)]["game_server"]
+            embed = discord.Embed(color=Colors.SUCCESS)
+            embed.add_field(
+                name="",
+                value=f"[{x}|{y}]({game_server}/position_details.php?x={x}&y={y})",
+            )
+            await message.channel.send(embed=embed)
 
     async def on_scheduled_event_create(self, event: discord.ScheduledEvent):
         # Refresh config

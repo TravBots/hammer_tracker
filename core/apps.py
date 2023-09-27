@@ -45,6 +45,8 @@ class BoinkApp(BaseApp):
                 await self._info()
             elif self.keyword == "set":
                 await self._set_config_value(self.params)
+            elif self.keyword == "link":
+                await self.link(self.params)
             else:
                 print(
                     f"{self.keyword} is not a valid command for {self.__class__.__name__}"
@@ -116,6 +118,16 @@ class BoinkApp(BaseApp):
                 value=f"Failed to set {setting_name} as {setting_value}",
             )
 
+        await self.message.channel.send(embed=embed)
+
+    async def link(self, params):
+        x, y = params[0].split("/")
+        game_server = self.config[self.guild_id]["game_server"]
+        embed = discord.Embed(color=Colors.SUCCESS)
+        embed.add_field(
+            name="",
+            value=f"{game_server}/position_details.php?x={x}&y={y}",
+        )
         await self.message.channel.send(embed=embed)
 
 
