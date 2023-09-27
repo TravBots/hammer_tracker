@@ -46,16 +46,6 @@ class Core(discord.Client):
         if app is not None:
             await app.run()
 
-        if message.content.startswith("!link"):
-            x, y = message.content.split(" ")[1].split("/")
-            game_server = self.config[str(message.guild.id)]["game_server"]
-            embed = discord.Embed(color=Colors.SUCCESS)
-            embed.add_field(
-                name="",
-                value=f"[{x}|{y}]({game_server}/position_details.php?x={x}&y={y})",
-            )
-            await message.channel.send(embed=embed)
-
     async def on_scheduled_event_create(self, event: discord.ScheduledEvent):
         # Refresh config
         self.config.read("config.ini")
