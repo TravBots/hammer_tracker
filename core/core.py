@@ -46,6 +46,25 @@ class Core(discord.Client):
         if app is not None:
             await app.run()
 
+        if coordinates_are_valid(message.content):
+            if not message.author.bot:
+                slash = "/" in message.content
+                pipe = "|" in message.content
+
+                if slash:
+                    xy = message.content.split("/")
+                elif pipe:
+                    xy = message.content.split("|")
+                x = xy[0]
+                y = xy[1]
+                game_server = self.config[str(message.guild.id)]["game_server"]
+                embed = discord.Embed(color=Colors.SUCCESS)
+                embed.add_field(
+                    name="",
+                    value=f"{game_server}/position_details.php?x={x}&y={y}",
+                )
+                await message.channel.send(embed=embed)
+
     async def on_scheduled_event_create(self, event: discord.ScheduledEvent):
         # Refresh config
         self.config.read("config.ini")
