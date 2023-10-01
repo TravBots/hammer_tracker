@@ -56,8 +56,8 @@ class Core(discord.Client):
                     xy = message.content.split("/")
                 elif pipe:
                     xy = message.content.split("|")
-                x = xy[0]
-                y = xy[1]
+                x = xy[0].strip()
+                y = xy[1].strip()
                 game_server = self.config[str(message.guild.id)]["game_server"]
                 embed = discord.Embed(color=Colors.SUCCESS)
                 embed.add_field(
