@@ -4,7 +4,7 @@ import sqlite3
 
 from typing import List
 
-from utils.constants import dev_ids
+from utils.constants import dev_ids, MAP_MAX, MAP_MIN
 
 
 def roles_are_valid(message, guild_id, config) -> bool:
@@ -16,9 +16,6 @@ def roles_are_valid(message, guild_id, config) -> bool:
 
 
 def coordinates_are_valid(coordinates: str) -> bool:
-    MAX = 400
-    MIN = -400
-
     slash = "/" in coordinates
     pipe = "|" in coordinates
 
@@ -35,7 +32,7 @@ def coordinates_are_valid(coordinates: str) -> bool:
     try:
         x = int(xy[0])
         y = int(xy[1])
-        if x > MAX or y > MAX or x < MIN or y < MIN:
+        if x > MAP_MAX or y > MAP_MAX or x < MAP_MIN or y < MAP_MIN:
             return False
         return True
     except ValueError:

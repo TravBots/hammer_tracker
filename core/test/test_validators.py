@@ -6,8 +6,11 @@ from mocks import *
 def test_coordinates_are_valid():
     assert coordinates_are_valid("55/55")
     assert coordinates_are_valid("55|55")
-    assert coordinates_are_valid("400/-400")
+    assert coordinates_are_valid("50 / 50")
+    assert coordinates_are_valid("200/-200")
 
+    assert not coordinates_are_valid("400/-400")
+    assert not coordinates_are_valid("200/-201")
     assert not coordinates_are_valid("ab|cd")
     assert not coordinates_are_valid("55/ab")
     assert not coordinates_are_valid("ab/cd")

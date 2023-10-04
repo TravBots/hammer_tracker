@@ -4,6 +4,9 @@ class Colors:
     WARNING = 0xFFFF00
 
 
+MAP_MAX = 200
+MAP_MIN = -200
+
 dev_ids = [322602660555653151, 177473204011401216]
 
 crop_production = {
