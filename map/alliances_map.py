@@ -57,6 +57,19 @@ def map(alliances):
         scaleanchor="x",
         scaleratio=1,
     )
+
+    fig.add_shape(
+        type="circle",
+        xref="x",
+        yref="y",
+        x0=-22,
+        y0=-22,
+        x1=22,
+        y1=22,
+        line_color="LightSeaGreen",
+        fillcolor="#7f7f7f",
+        opacity=0.3,
+    )
     return fig
 
 
