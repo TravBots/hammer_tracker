@@ -46,7 +46,7 @@ def map(alliances):
         y="y_coordinate",
         color="alliance_tag",
         symbol="alliance_tag",
-        hover_data=["village_name", "population", "capital"],
+        hover_data=["player_name", "village_name", "population", "capital"],
         width=1100,
         height=1000,
     )
