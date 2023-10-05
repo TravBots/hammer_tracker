@@ -34,7 +34,7 @@ app.layout = html.Div(
             value=[alliances["alliance_tag"].iat[i] for i in range(4)],
             multi=True,
         ),
-        dcc.Graph(id="graph"),
+        dcc.Graph(id="graph", config={"displaylogo": False}),
     ]
 )
 
