@@ -1,12 +1,16 @@
 import pandas as pd
 import plotly.express as px
 from dash import Dash, Input, Output, dcc, html
+import dash_auth
 
 import sqlite3
 
 external_stylesheets = ["https://codepen.io/chriddyp/pen/bWLwgP.css"]
 
+VALID_USERNAME_PASSWORD_PAIRS = {"hello": "world"}
+
 app = Dash(__name__, external_stylesheets=external_stylesheets)
+auth = dash_auth.BasicAuth(app, VALID_USERNAME_PASSWORD_PAIRS)
 
 server = app.server
 
@@ -18,9 +22,14 @@ group by alliance_tag
 order by total_pop desc limit 20
 ;"""
 alliances = data = pd.read_sql_query(query, cnx)
+updated_at = pd.read_sql_query(
+    "select max(strftime('%Y-%m-%d', datetime(inserted_at, 'unixepoch', 'localtime'))) as updated_at from map_history;",
+    cnx,
+)
 app.layout = html.Div(
     children=[
         html.H4("Select the alliances you would like to see below"),
+        html.P(f"Last updated: {updated_at['updated_at'].iat[0]}"),
         dcc.Dropdown(
             id="dropdown",
             options=alliances["alliance_tag"],
@@ -47,6 +56,7 @@ def map(alliances):
         color="alliance_tag",
         symbol="alliance_tag",
         hover_data=["player_name", "village_name", "population", "capital"],
+        size="capital",
         width=1100,
         height=1000,
     )
@@ -57,6 +67,7 @@ def map(alliances):
         scaleanchor="x",
         scaleratio=1,
     )
+    fig.update_traces(marker={"size": 7})
 
     fig.add_shape(
         type="circle",
