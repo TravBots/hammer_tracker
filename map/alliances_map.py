@@ -1,16 +1,13 @@
 import pandas as pd
 import plotly.express as px
 from dash import Dash, Input, Output, dcc, html
-import dash_auth
 
 import sqlite3
 
 external_stylesheets = ["https://codepen.io/chriddyp/pen/bWLwgP.css"]
 
-VALID_USERNAME_PASSWORD_PAIRS = {"hello": "world"}
 
 app = Dash(__name__, external_stylesheets=external_stylesheets)
-auth = dash_auth.BasicAuth(app, VALID_USERNAME_PASSWORD_PAIRS)
 
 server = app.server
 
