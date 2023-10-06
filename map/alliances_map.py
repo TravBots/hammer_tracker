@@ -1,7 +1,8 @@
 import pandas as pd
 import plotly.express as px
-from dash import Dash, Input, Output, dcc, html
+from dash import Dash, Input, Output, dcc, html, dash_table
 
+import datetime
 import sqlite3
 
 external_stylesheets = ["https://codepen.io/chriddyp/pen/bWLwgP.css"]
@@ -24,17 +25,69 @@ updated_at = pd.read_sql_query(
     "select max(strftime('%Y-%m-%d', datetime(inserted_at, 'unixepoch', 'localtime'))) as updated_at from map_history;",
     cnx,
 )
+
+
+def data_table(cnx: sqlite3.Connection):
+    df = pd.read_sql_query(
+        "select player_name, alliance_tag, sum(population) as population, count(*) as village_count, sum(population)/count(*) as avg_village_size from x_world group by 1, 2",
+        cnx,
+    )
+    fig = dash_table.DataTable(
+        columns=[
+            {"name": "Player Name", "id": "player_name", "type": "text"},
+            {"name": "Population", "id": "population", "type": "numeric"},
+            {"name": "Alliance", "id": "alliance_tag", "type": "text"},
+            {"name": "Village Count", "id": "village_count", "type": "numeric"},
+            {
+                "name": "Average Village Size",
+                "id": "avg_village_size",
+                "type": "numeric",
+            },
+        ],
+        data=df.to_dict("records"),
+        filter_action="native",
+        sort_action="native",
+        page_action="native",
+        page_current=0,
+        page_size=25,
+        style_table={
+            "height": 400,
+        },
+        style_data={
+            "width": "150px",
+            "minWidth": "150px",
+            "maxWidth": "150px",
+            "overflow": "hidden",
+            "textOverflow": "ellipsis",
+        },
+    )
+
+    return fig
+
+
 app.layout = html.Div(
     children=[
-        html.H4("Select the alliances you would like to see below"),
-        html.P(f"Last updated: {updated_at['updated_at'].iat[0]}"),
-        dcc.Dropdown(
-            id="dropdown",
-            options=alliances["alliance_tag"],
-            value=[alliances["alliance_tag"].iat[i] for i in range(4)],
-            multi=True,
+        html.Div(
+            [
+                html.H4("Select the alliances you would like to see below"),
+                html.P(f"Last updated: {updated_at['updated_at'].iat[0]}"),
+                dcc.Dropdown(
+                    id="dropdown",
+                    options=alliances["alliance_tag"],
+                    value=[alliances["alliance_tag"].iat[i] for i in range(4)],
+                    multi=True,
+                ),
+                dcc.Graph(
+                    id="graph",
+                    config={"displaylogo": False},
+                ),
+            ],
         ),
-        dcc.Graph(id="graph", config={"displaylogo": False}),
+        html.Div(
+            [
+                data_table(cnx),
+            ]
+        ),
     ]
 )
 
