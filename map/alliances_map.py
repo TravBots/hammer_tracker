@@ -43,18 +43,31 @@ app.layout = html.Div(
 def map(alliances):
     alliances = ", ".join(f"'{alliance}'" for alliance in alliances)
     cnx = sqlite3.connect("../core/databases/map.db")
-    query = f"SELECT * FROM x_world where alliance_tag in ({alliances});"
+    query = f"""
+    SELECT
+        x_coordinate as 'X Coordinate',
+        y_coordinate as 'Y Coordinate',
+        alliance_tag as 'Alliance Name',
+        player_name as 'Player Name',
+        village_name as 'Village Name',
+        case 
+            when tribe_id = 1 then 'Roman'
+            when tribe_id = 2 then 'Teuton'
+            when tribe_id = 3 then 'Gaul'
+        end as 'Tribe',
+        population as 'Population',
+        capital as 'Capital?'
+    FROM x_world where alliance_tag in ({alliances});"""
     print(query)
 
     data = pd.read_sql_query(query, cnx)
     fig = px.scatter(
         data_frame=data,
-        x="x_coordinate",
-        y="y_coordinate",
-        color="alliance_tag",
-        symbol="alliance_tag",
-        hover_data=["player_name", "village_name", "population", "capital"],
-        size="capital",
+        x="X Coordinate",
+        y="Y Coordinate",
+        color="Alliance Name",
+        symbol="Alliance Name",
+        hover_data=["Player Name", "Village Name", "Tribe", "Population", "Capital?"],
         width=1100,
         height=1000,
     )
