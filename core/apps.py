@@ -70,16 +70,12 @@ class BoinkApp(BaseApp):
         self.config.read("config.ini")
         DB = self.config[self.guild_id]["database"]
 
-        create_hammers = get_sql_by_path("core/sql/create_table_hammers.sql")
-        create_defense_calls = get_sql_by_path(
-            "core/sql/create_table_defense_calls.sql"
-        )
+        create_hammers = get_sql_by_path("sql/create_table_hammers.sql")
+        create_defense_calls = get_sql_by_path("sql/create_table_defense_calls.sql")
         create_submitted_defense = get_sql_by_path(
-            "core/sql/create_table_submitted_defense.sql"
+            "sql/create_table_submitted_defense.sql"
         )
-        create_defense_threads = get_sql_by_path(
-            "core/sql/create_table_defense_threads.sql"
-        )
+        create_defense_threads = get_sql_by_path("sql/create_table_defense_threads.sql")
 
         for query in [
             create_hammers,
