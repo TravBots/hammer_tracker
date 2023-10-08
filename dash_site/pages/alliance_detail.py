@@ -17,22 +17,22 @@ def layout(alliance_id=None):
     query = f"select alliance_tag, sum(population) as population from x_world where alliance_id = {alliance_id} group by 1"
     alliance = pd.read_sql_query(query, cnx)
 
-    ref = min(len(history) - 1, 7)
+    ref = max(0, len(history) - 8)
     fig = go.Figure(
         go.Indicator(
             mode="number+delta",
-            value=history["population"][ref],
+            value=history["population"][len(history) - 1],
             delta={
-                "reference": alliance["population"][0],
+                "reference": history["population"][ref],
                 "valueformat": ".0f",
             },
-            title={"text": alliance["alliance_tag"][0]},
+            title={"text": f"{alliance['alliance_tag'][0]} (7 day diff)"},
             domain={"y": [0, 1], "x": [0.25, 0.75]},
         )
     )
     fig.add_trace(go.Scatter(y=history["population"]))
 
-    fig.update_layout(xaxis={"range": [0, len(history) - 1]})
+    # fig.update_layout(xaxis={"range": [0, len(history) - 1]})
 
     # return html.Div(dcc.Graph(figure=fig, config={"displaylogo": False}))
 
