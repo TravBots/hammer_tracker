@@ -4,7 +4,7 @@ import sqlite3
 import plotly.graph_objects as go
 import pandas as pd
 
-dash.register_page(__name__, path_template="/alliance/<alliance_id>")
+dash.register_page(__name__, path_template="/alliances/<alliance_id>")
 
 
 def layout(alliance_id=None):

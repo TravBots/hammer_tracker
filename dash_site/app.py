@@ -16,7 +16,7 @@ app = Dash(
     external_stylesheets=external_stylesheets,
     meta_tags=[{"name": "viewport", "content": "width=device-width, initial-scale=1"}],
 )
-app.title = "Travstat | America 3"
+app.title = "Travstat"
 
 server = app.server
 
