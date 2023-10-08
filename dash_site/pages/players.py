@@ -11,20 +11,55 @@ cnx = sqlite3.connect("../core/databases/map.db")
 
 def data_table(cnx: sqlite3.Connection):
     df = pd.read_sql_query(
-        "select player_name, alliance_tag, sum(population) as population, count(*) as village_count, sum(population)/count(*) as avg_village_size, row_number() over(order by sum(population) desc) as rank from x_world where player_name <> 'Natars'group by 1, 2",
+        """select 
+            '['||player_name||']('||'players/'||player_id||')' as player_name, 
+            alliance_tag, 
+            sum(population) as population, 
+            count(*) as village_count, 
+            sum(population)/count(*) as avg_village_size, 
+            row_number() over(order by sum(population) desc) as rank 
+        from x_world 
+        where player_name <> 'Natars'
+        group by 1, 2""",
         cnx,
     )
     fig = dash_table.DataTable(
         columns=[
-            {"name": "Rank", "id": "rank", "type": "numeric"},
-            {"name": "Player Name", "id": "player_name", "type": "text"},
-            {"name": "Population", "id": "population", "type": "numeric"},
-            {"name": "Alliance", "id": "alliance_tag", "type": "text"},
-            {"name": "Village Count", "id": "village_count", "type": "numeric"},
+            {
+                "name": "Rank",
+                "id": "rank",
+                "type": "numeric",
+                "presentation": "markdown",
+            },
+            {
+                "name": "Player Name",
+                "id": "player_name",
+                "type": "text",
+                "presentation": "markdown",
+            },
+            {
+                "name": "Population",
+                "id": "population",
+                "type": "numeric",
+                "presentation": "markdown",
+            },
+            {
+                "name": "Alliance",
+                "id": "alliance_tag",
+                "type": "text",
+                "presentation": "markdown",
+            },
+            {
+                "name": "Village Count",
+                "id": "village_count",
+                "type": "numeric",
+                "presentation": "markdown",
+            },
             {
                 "name": "Average Village Size",
                 "id": "avg_village_size",
                 "type": "numeric",
+                "presentation": "markdown",
             },
         ],
         data=df.to_dict("records"),
