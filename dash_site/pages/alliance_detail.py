@@ -32,7 +32,7 @@ def layout(alliance_id=None):
     )
     fig.add_trace(go.Scatter(y=history["population"]))
 
-    # fig.update_layout(xaxis={"range": [0, len(history) - 1]})
+    fig.update_layout(xaxis={"range": [0, len(history) - 1]})
 
     # return html.Div(dcc.Graph(figure=fig, config={"displaylogo": False}))
 
