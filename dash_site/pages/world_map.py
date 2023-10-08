@@ -1,10 +1,9 @@
-import pandas as pd
-import plotly.express as px
-from dash import Dash, Input, Output, dcc, html, dash_table, callback
-import dash
-import datetime
 import sqlite3
 
+import dash
+import pandas as pd
+import plotly.express as px
+from dash import Input, Output, callback, dcc, html
 
 dash.register_page(__name__)
 
