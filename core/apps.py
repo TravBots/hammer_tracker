@@ -155,7 +155,7 @@ class BoinkApp(BaseApp):
             df = df[df["player_name"] == player]
             df = df.sort_values(by=["population"], ascending=False)
 
-            link = f"[View on Travstats](https://www.travstat.com/players/{df['player_id'][0]})"
+            link = f"[View on Travstat](https://www.travstat.com/players/{df['player_id'][0]})"
 
             embed = discord.Embed(title=player, color=Colors.SUCCESS)
             embed.description = link
