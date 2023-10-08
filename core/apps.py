@@ -142,17 +142,28 @@ class BoinkApp(BaseApp):
         guild_id = str(message.guild.id)
         self.DB = self.config[guild_id]["database"]
 
-        ign = " ".join(params)
+        ign = " ".join(params).lower()
         cnx = sqlite3.connect("../core/databases/map.db")
-        query = "select * from map_history where player_name = '" + ign + "'"
+        query = f"select * from map_history where lower(player_name) like '{ign}%'"
         df = pd.read_sql_query(query, cnx)
 
         if not df.empty:
-            embed = discord.Embed(title="Village Records", color=Colors.SUCCESS)
+            # Get largest timestamp from the df['timestamp'] column
+            timestamp = df["inserted_at"].max()
+            player = df["player_name"][0]
+            df = df[df["inserted_at"] == timestamp]
+            df = df[df["player_name"] == player]
+            df = df.sort_values(by=["population"], ascending=False)
+
+            link = f"[View on Travstat](https://www.travstat.com/players/{df['player_id'][0]})"
+
+            embed = discord.Embed(title=player, color=Colors.SUCCESS)
+            embed.description = link
             embed.add_field(
                 name="Village Name | X | Y | Population",
                 value=rows_to_piped_strings(
-                    df, ["village_name", "x_coordinate", "y_coordinate", "population"]
+                    df,
+                    ["village_name", "x_coordinate", "y_coordinate", "population"],
                 ),
                 inline=False,
             )
