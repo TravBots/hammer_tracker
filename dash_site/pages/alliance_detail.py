@@ -2,6 +2,7 @@ import sqlite3
 
 import dash
 import pandas as pd
+import plotly.express as px
 import plotly.graph_objects as go
 from dash import dcc, html
 
@@ -33,4 +34,59 @@ def layout(alliance_id=None):
 
     fig.update_layout(xaxis={"range": [0, len(history) - 1]})
 
-    return html.Div(dcc.Graph(figure=fig, config={"displaylogo": False}))
+    # return html.Div(dcc.Graph(figure=fig, config={"displaylogo": False}))
+
+    query = f"""
+    SELECT
+        x_coordinate as 'X Coordinate',
+        y_coordinate as 'Y Coordinate',
+        alliance_tag as 'Alliance Name',
+        player_name as 'Player Name',
+        village_name as 'Village Name',
+        case 
+            when tribe_id = 1 then 'Roman'
+            when tribe_id = 2 then 'Teuton'
+            when tribe_id = 3 then 'Gaul'
+        end as 'Tribe',
+        population as 'Population',
+        capital as 'Capital?'
+    FROM x_world where alliance_id = {alliance_id}
+    order by player_name;"""
+
+    data = pd.read_sql_query(query, cnx)
+    map = px.scatter(
+        data_frame=data,
+        x="X Coordinate",
+        y="Y Coordinate",
+        color="Player Name",
+        hover_data=["Player Name", "Village Name", "Tribe", "Population", "Capital?"],
+        width=1100,
+        height=1000,
+    )
+
+    map.update_xaxes(range=[-200, 200])
+    map.update_yaxes(range=[-200, 200])
+    map.update_yaxes(
+        scaleanchor="x",
+        scaleratio=1,
+    )
+    map.update_traces(marker={"size": 7})
+
+    map.add_shape(
+        type="circle",
+        xref="x",
+        yref="y",
+        x0=-22,
+        y0=-22,
+        x1=22,
+        y1=22,
+        line_color="LightSeaGreen",
+        fillcolor="#7f7f7f",
+        opacity=0.3,
+    )
+    return html.Div(
+        [
+            dcc.Graph(figure=fig, config={"displaylogo": False}),
+            dcc.Graph(figure=map, config={"displaylogo": False}),
+        ]
+    )

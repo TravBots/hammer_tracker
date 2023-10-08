@@ -11,8 +11,8 @@ cnx = sqlite3.connect("../core/databases/map.db")
 
 def data_table(cnx: sqlite3.Connection):
     df = pd.read_sql_query(
-        """select 
-            alliance_tag, 
+        f"""select 
+            '['||alliance_tag||']('||'alliances/'||alliance_id||')' as alliance_tag, 
             sum(population) as population, 
             count(distinct player_id) as player_count, 
             sum(population)/count(distinct player_id) as avg_player_size, 
@@ -24,14 +24,35 @@ def data_table(cnx: sqlite3.Connection):
     )
     fig = dash_table.DataTable(
         columns=[
-            {"name": "Rank", "id": "rank", "type": "numeric"},
-            {"name": "Alliance Name", "id": "alliance_tag", "type": "text"},
-            {"name": "Population", "id": "population", "type": "numeric"},
-            {"name": "Player Count", "id": "player_count", "type": "numeric"},
+            {
+                "name": "Rank",
+                "id": "rank",
+                "type": "numeric",
+                "presentation": "markdown",
+            },
+            {
+                "name": "Alliance Name",
+                "id": "alliance_tag",
+                "type": "text",
+                "presentation": "markdown",
+            },
+            {
+                "name": "Population",
+                "id": "population",
+                "type": "numeric",
+                "presentation": "markdown",
+            },
+            {
+                "name": "Player Count",
+                "id": "player_count",
+                "type": "numeric",
+                "presentation": "markdown",
+            },
             {
                 "name": "Average Player Size",
                 "id": "avg_player_size",
                 "type": "numeric",
+                "presentation": "markdown",
             },
         ],
         data=df.to_dict("records"),
