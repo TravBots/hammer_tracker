@@ -11,16 +11,15 @@ cnx = sqlite3.connect("../core/databases/map.db")
 
 def data_table(cnx: sqlite3.Connection):
     df = pd.read_sql_query(
-        """select 
-            '['||player_name||']('||'players/'||player_id||')' as player_name, 
-            alliance_tag, 
+        f"""select 
+            '['||alliance_tag||']('||'alliances/'||alliance_id||')' as alliance_tag, 
             sum(population) as population, 
-            count(*) as village_count, 
-            sum(population)/count(*) as avg_village_size, 
+            count(distinct player_id) as player_count, 
+            sum(population)/count(distinct player_id) as avg_player_size, 
             row_number() over(order by sum(population) desc) as rank 
         from x_world 
-        where player_name <> 'Natars'
-        group by 1, 2""",
+        where alliance_tag <> '' 
+        group by 1""",
         cnx,
     )
     fig = dash_table.DataTable(
@@ -32,8 +31,8 @@ def data_table(cnx: sqlite3.Connection):
                 "presentation": "markdown",
             },
             {
-                "name": "Player Name",
-                "id": "player_name",
+                "name": "Alliance Name",
+                "id": "alliance_tag",
                 "type": "text",
                 "presentation": "markdown",
             },
@@ -44,20 +43,14 @@ def data_table(cnx: sqlite3.Connection):
                 "presentation": "markdown",
             },
             {
-                "name": "Alliance",
-                "id": "alliance_tag",
-                "type": "text",
-                "presentation": "markdown",
-            },
-            {
-                "name": "Village Count",
-                "id": "village_count",
+                "name": "Player Count",
+                "id": "player_count",
                 "type": "numeric",
                 "presentation": "markdown",
             },
             {
-                "name": "Average Village Size",
-                "id": "avg_village_size",
+                "name": "Average Player Size",
+                "id": "avg_player_size",
                 "type": "numeric",
                 "presentation": "markdown",
             },
