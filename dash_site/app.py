@@ -1,11 +1,9 @@
-import pandas as pd
-import plotly.express as px
-from dash import Dash, Input, Output, dcc, html, dash_table
-import dash
-import datetime
 import sqlite3
 
+import dash
 import dash_bootstrap_components as dbc
+import pandas as pd
+from dash import Dash, dcc, html
 
 external_stylesheets = ["https://codepen.io/chriddyp/pen/bWLwgP.css"]
 

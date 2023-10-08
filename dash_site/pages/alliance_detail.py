@@ -1,8 +1,9 @@
-import dash
-from dash import html, dcc
 import sqlite3
-import plotly.graph_objects as go
+
+import dash
 import pandas as pd
+import plotly.graph_objects as go
+from dash import dcc, html
 
 dash.register_page(__name__, path_template="/alliances/<alliance_id>")
 
