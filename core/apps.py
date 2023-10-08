@@ -1,9 +1,14 @@
 from datetime import datetime
 from typing import List
 
+import sqlite3
+import pandas as pd
+
+
 from utils.errors import *
 from utils.validators import *
 from utils.decorators import *
+from utils.printers import *
 from funcs import *
 
 
@@ -47,6 +52,8 @@ class BoinkApp(BaseApp):
                 await self._set_config_value(self.params)
             elif self.keyword == "link":
                 await self.link(self.params)
+            elif self.keyword == "search":
+                await self.search(self.params, self.message)
             else:
                 print(
                     f"{self.keyword} is not a valid command for {self.__class__.__name__}"
@@ -129,6 +136,33 @@ class BoinkApp(BaseApp):
             value=f"{game_server}/position_details.php?x={x}&y={y}",
         )
         await self.message.channel.send(embed=embed)
+
+    @is_dev_or_user_or_admin_privs
+    async def search(self, params, message):
+        guild_id = str(message.guild.id)
+        self.DB = self.config[guild_id]["database"]
+
+        ign = " ".join(params)
+        cnx = sqlite3.connect("../core/databases/map.db")
+        query = "select * from map_history where player_name = '" + ign + "'"
+        df = pd.read_sql_query(query, cnx)
+
+        if not df.empty:
+            embed = discord.Embed(title="Village Records", color=Colors.SUCCESS)
+            embed.add_field(
+                name="Village Name | X | Y | Population",
+                value=rows_to_piped_strings(
+                    df, ["village_name", "x_coordinate", "y_coordinate", "population"]
+                ),
+                inline=False,
+            )
+        else:
+            embed = discord.Embed(color=Colors.ERROR)
+            embed.add_field(
+                name="Error", value="No results found for " + ign + " in the map"
+            )
+
+        await message.channel.send(embed=embed)
 
 
 class TrackerApp(BaseApp):
