@@ -30,11 +30,7 @@ def layout(alliance_id=None):
             domain={"y": [0, 1], "x": [0.25, 0.75]},
         )
     )
-    fig.add_trace(go.Scatter(y=history["population"]))
-
-    fig.update_layout(xaxis={"range": [0, len(history) - 1]})
-
-    # return html.Div(dcc.Graph(figure=fig, config={"displaylogo": False}))
+    fig.add_trace(go.Scatter(y=history["population"], x=history["date"]))
 
     query = f"""
     SELECT

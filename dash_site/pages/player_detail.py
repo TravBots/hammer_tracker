@@ -15,7 +15,7 @@ def layout(player_id=None):
     query = f"select strftime('%Y-%m-%d', datetime(inserted_at, 'unixepoch', 'localtime')) as date, player_id, sum(population) as population from map_history where player_id = {player_id} group by 1,2 order by 1;"
     history = pd.read_sql_query(query, cnx)
     query = f"select player_name, sum(population) as population from x_world where player_id = {player_id} group by 1"
-    alliance = pd.read_sql_query(query, cnx)
+    player = pd.read_sql_query(query, cnx)
 
     ref = max(0, len(history) - 8)
     fig = go.Figure(
@@ -26,15 +26,11 @@ def layout(player_id=None):
                 "reference": history["population"][ref],
                 "valueformat": ".0f",
             },
-            title={"text": f"{alliance['player_name'][0]} (7 day diff)"},
+            title={"text": f"{player['player_name'][0]} (7 day diff)"},
             domain={"y": [0, 1], "x": [0.25, 0.75]},
         )
     )
-    fig.add_trace(go.Scatter(y=history["population"]))
-
-    fig.update_layout(xaxis={"range": [0, len(history) - 1]})
-
-    # return html.Div(dcc.Graph(figure=fig, config={"displaylogo": False}))
+    fig.add_trace(go.Scatter(y=history["population"], x=history["date"]))
 
     query = f"""
     SELECT
