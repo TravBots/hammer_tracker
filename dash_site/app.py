@@ -51,6 +51,7 @@ app.layout = html.Div(
                         dash.page_container,
                     ]
                 ),
+                html.Hr(),
                 html.Footer(
                     children=[
                         html.P(f"Last updated: {updated_at['updated_at'].iat[0]}"),
