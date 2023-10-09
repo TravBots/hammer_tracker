@@ -147,16 +147,15 @@ class BoinkApp(BaseApp):
         query = f"select * from map_history where lower(player_name) like '{ign}%'"
         df = pd.read_sql_query(query, cnx)
 
+        # Get largest timestamp from the df['timestamp'] column
+        timestamp = df["inserted_at"].max()
+        player = df["player_name"][0]
+        player_id = df["player_id"][0]
+        df = df[df["inserted_at"] == timestamp]
+        df = df[df["player_name"] == player]
+        df = df.sort_values(by=["population"], ascending=False)
         if not df.empty:
-            # Get largest timestamp from the df['timestamp'] column
-            timestamp = df["inserted_at"].max()
-            player = df["player_name"][0]
-            df = df[df["inserted_at"] == timestamp]
-            df = df[df["player_name"] == player]
-            df = df.sort_values(by=["population"], ascending=False)
-
-            link = f"[View on Travstat](https://www.travstat.com/players/{df['player_id'][0]})"
-
+            link = f'[View on Travstat](https://www.travstat.com/players/{player_id})'
             embed = discord.Embed(title=player, color=Colors.SUCCESS)
             embed.description = link
             embed.add_field(
