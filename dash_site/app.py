@@ -5,13 +5,10 @@ import dash_bootstrap_components as dbc
 import pandas as pd
 from dash import Dash, dcc, html
 
-external_stylesheets = ["https://codepen.io/chriddyp/pen/bWLwgP.css"]
-
-
 app = Dash(
     __name__,
     use_pages=True,
-    external_stylesheets=external_stylesheets,
+    external_stylesheets=[dbc.themes.LUX],
     meta_tags=[{"name": "viewport", "content": "width=device-width, initial-scale=1"}],
 )
 app.title = "Travstat"
@@ -24,34 +21,44 @@ updated_at = pd.read_sql_query(
     cnx,
 )
 
-app.layout = html.Div(
-    dbc.Container(
+from dash import html
+import dash_bootstrap_components as dbc
+
+
+def create_navbar():
+    navbar = dbc.NavbarSimple(
         children=[
-            html.Div(
-                [
-                    html.H1("Welcome to Travstat"),
-                    html.Div(
-                        [
-                            html.Div(
-                                dcc.Link(
-                                    f"{page['name']}",
-                                    href=page["relative_path"],
-                                )
-                            )
-                            for page in dash.page_registry.values()
-                            if "detail" not in page["name"]
-                        ]
-                    ),
-                    dash.page_container,
-                ]
-            ),
-            html.Footer(
-                children=[
-                    html.P(f"Last updated: {updated_at['updated_at'].iat[0]}"),
-                ]
-            ),
-        ]
+            dbc.NavItem(dbc.NavLink(page["name"], href=page["relative_path"]))
+            for page in dash.page_registry.values()
+            if "detail" not in page["name"]
+        ],
+        brand="Travstat",
+        brand_href="/",
+        color="primary",
+        dark=True,
     )
+
+    return navbar
+
+
+app.layout = html.Div(
+    [
+        create_navbar(),
+        dbc.Container(
+            children=[
+                html.Div(
+                    [
+                        dash.page_container,
+                    ]
+                ),
+                html.Footer(
+                    children=[
+                        html.P(f"Last updated: {updated_at['updated_at'].iat[0]}"),
+                    ]
+                ),
+            ]
+        ),
+    ]
 )
 
 

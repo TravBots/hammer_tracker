@@ -30,7 +30,9 @@ def layout(player_id=None):
             domain={"y": [0, 1], "x": [0.25, 0.75]},
         )
     )
-    fig.add_trace(go.Scatter(y=history["population"], x=history["date"]))
+    fig.add_trace(
+        go.Scatter(y=history["population"], x=history["date"], name="Population")
+    )
 
     query = f"""
     SELECT
