@@ -44,6 +44,7 @@ def create_navbar():
 app.layout = html.Div(
     [
         create_navbar(),
+        html.Br(),
         dbc.Container(
             children=[
                 html.Div(
