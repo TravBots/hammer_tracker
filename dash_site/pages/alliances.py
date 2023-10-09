@@ -62,7 +62,7 @@ def data_table(cnx: sqlite3.Connection):
         page_current=0,
         page_size=25,
         style_table={
-            "height": 1000,
+            "width": "90%",
         },
         style_data={
             "width": "150px",
@@ -71,6 +71,7 @@ def data_table(cnx: sqlite3.Connection):
             "overflow": "hidden",
             "textOverflow": "ellipsis",
         },
+        markdown_options={"link_target": "_self", "html": True},
     )
 
     return fig
