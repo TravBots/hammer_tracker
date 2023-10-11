@@ -1,5 +1,4 @@
 *.db
-databases/
 sqlite_test.py
 env/
 config.ini

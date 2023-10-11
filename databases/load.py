@@ -18,7 +18,7 @@ for server in SERVER_LINKS:
     try:
         print(f"Loading {server_link} into x_world")
         data = requests.get(server_link + "/map.sql")
-        cnx = sqlite3.connect(f"../databases/{server_nick}.db")
+        cnx = sqlite3.connect(f"game_servers/{server_nick}.db")
         cnx.executescript(replace_x_world)
 
         records = 0
