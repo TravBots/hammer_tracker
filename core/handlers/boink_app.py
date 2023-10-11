@@ -1,4 +1,4 @@
-from .BaseApp import BaseApp
+from .base_app import BaseApp
 import discord
 
 import sqlite3

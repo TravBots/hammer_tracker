@@ -1,4 +1,4 @@
-from .BaseApp import BaseApp
+from .base_app import BaseApp
 
 from utils.errors import *
 from utils.validators import *
