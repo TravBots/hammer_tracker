@@ -1,4 +1,4 @@
-#!/Users/jackbonatakis/repos/hammer_tracker/env/bin/python3
+#!/projects/hammer_tracker/dash_site/env/bin/python3
 import requests
 import sqlite3
 
@@ -35,4 +35,4 @@ for server in SERVER_LINKS:
         cnx.close()
 
     except Exception as e:
-        print(f"Failed to collect map data for {server_link}\n")
+        print(f"Failed to collect map data for {server_link}\n{e}")
