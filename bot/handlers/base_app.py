@@ -2,6 +2,8 @@ import configparser
 from typing import List
 import discord
 
+from utils.constants import BOT_SERVERS_DB_PATH
+
 
 class BaseApp:
     def __init__(
@@ -12,7 +14,7 @@ class BaseApp:
     ):
         self.message = message
         self.guild_id = str(self.message.guild.id)
-        self.db_path = f"databases/{self.guild_id}.db"
+        self.db_path = f"{BOT_SERVERS_DB_PATH}{self.guild_id}.db"
         self.keyword = params[0]
         self.params = params[1:]
         self.config = config

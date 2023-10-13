@@ -6,7 +6,7 @@ from datetime import datetime, timezone
 from typing import Any
 from zoneinfo import ZoneInfo
 
-from utils.constants import crop_production
+from utils.constants import crop_production, BOT_SERVERS_DB_PATH
 from utils.errors import *
 from funcs import *
 from utils.hero import *
@@ -76,7 +76,7 @@ class Core(discord.Client):
         x, y = event.location.replace("/", "|").split("|")
 
         cfd_id = create_cfd(
-            db_name=f"databases/{guild_id}.db",
+            db_name=f"{BOT_SERVERS_DB_PATH}{guild_id}.db",
             created_by_id=event.creator.id,
             event_id=event.id,
             created_by_name=event.creator.display_name,
@@ -102,7 +102,7 @@ class Core(discord.Client):
         thread = await channel.create_thread(name=event.name, message=cfd_message)
 
         insert_defense_thread(
-            db_name=f"databases/{guild_id}.db",
+            db_name=f"{BOT_SERVERS_DB_PATH}{guild_id}.db",
             defense_thread_id=thread.id,
             cfd_id=cfd_id,
             name=thread.name,
@@ -117,7 +117,7 @@ class Core(discord.Client):
         # Refresh config
         self.config.read("config.ini")
         guild_id = str(event.guild.id)
-        cancel_cfd(f"databases/{guild_id}.db", event.id)
+        cancel_cfd(f"{BOT_SERVERS_DB_PATH}{guild_id}.db", event.id)
 
     async def on_scheduled_event_update(self, before, after):
         """
@@ -145,7 +145,7 @@ class Core(discord.Client):
                         continue
 
                     print(f"Cleaning up threads for {guild}")
-                    conn = sqlite3.connect(f"databases/{guild.id}.db")
+                    conn = sqlite3.connect(f"{BOT_SERVERS_DB_PATH}{guild.id}.db")
                     for thread in channel.threads:
                         query = """
                         select 
