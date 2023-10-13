@@ -6,16 +6,16 @@ import plotly.express as px
 import plotly.graph_objects as go
 from dash import dcc, html
 
-dash.register_page(__name__, path_template="/players/<player_id>")
+dash.register_page(__name__, path_template="/alliances/<alliance_id>")
 
 
-def layout(player_id=None):
-    cnx = sqlite3.connect("../core/databases/map.db")
-    # TODO: Pass player_id as a param instead of f-string. This is insecure.
-    query = f"select strftime('%Y-%m-%d', datetime(inserted_at, 'unixepoch', 'localtime')) as date, player_id, sum(population) as population from map_history where player_id = {player_id} group by 1,2 order by 1;"
+def layout(alliance_id=None):
+    cnx = sqlite3.connect("../databases/game_servers/am3.db")
+    # TODO: Pass alliance_id as a param instead of f-string. This is insecure.
+    query = f"select strftime('%Y-%m-%d', datetime(inserted_at, 'unixepoch', 'localtime')) as date, alliance_id, sum(population) as population from map_history where alliance_id = {alliance_id} group by 1,2 order by 1;"
     history = pd.read_sql_query(query, cnx)
-    query = f"select player_name, sum(population) as population from x_world where player_id = {player_id} group by 1"
-    player = pd.read_sql_query(query, cnx)
+    query = f"select alliance_tag, sum(population) as population from x_world where alliance_id = {alliance_id} group by 1"
+    alliance = pd.read_sql_query(query, cnx)
 
     ref = max(0, len(history) - 8)
     fig = go.Figure(
@@ -26,7 +26,7 @@ def layout(player_id=None):
                 "reference": history["population"][ref],
                 "valueformat": ".0f",
             },
-            title={"text": f"{player['player_name'][0]} (7 day diff)"},
+            title={"text": f"{alliance['alliance_tag'][0]} (7 day diff)"},
             domain={"y": [0, 1], "x": [0.25, 0.75]},
         )
     )
@@ -48,7 +48,7 @@ def layout(player_id=None):
         end as 'Tribe',
         population as 'Population',
         capital as 'Capital?'
-    FROM x_world where player_id = {player_id}
+    FROM x_world where alliance_id = {alliance_id}
     order by player_name;"""
 
     data = pd.read_sql_query(query, cnx)

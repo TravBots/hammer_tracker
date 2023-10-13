@@ -7,7 +7,7 @@ from dash import Input, Output, callback, dcc, html
 
 dash.register_page(__name__)
 
-cnx = sqlite3.connect("../core/databases/map.db")
+cnx = sqlite3.connect("../databases/game_servers/am3.db")
 query = f"""
 select alliance_tag, sum(population) as total_pop from x_world 
 where alliance_tag <> ''
@@ -35,7 +35,7 @@ layout = html.Div(
 @callback(Output("graph", "figure"), Input("dropdown", "value"))
 def map(alliances):
     alliances = ", ".join(f"'{alliance}'" for alliance in alliances)
-    cnx = sqlite3.connect("../core/databases/map.db")
+    cnx = sqlite3.connect("../databases/game_servers/am3.db")
     query = f"""
     SELECT
         x_coordinate as 'X Coordinate',

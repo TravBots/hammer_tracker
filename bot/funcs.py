@@ -2,7 +2,7 @@ import sqlite3
 import discord
 import configparser
 
-from utils.constants import Colors
+from utils.constants import Colors, BOT_SERVERS_DB_PATH
 
 
 def init(config, message):
@@ -10,22 +10,19 @@ def init(config, message):
     guild_id = str(message.guild.id)
     message_author = str(message.author)
 
-    print(config.sections())
-    try:
-        print(guild_name, guild_id)
+    if not config.has_section(guild_id):
         config.add_section(guild_id)
-        config[guild_id]["database"] = "databases/{}.db".format(guild_id)
-        config[guild_id]["server"] = guild_name
         config[guild_id]["init_user"] = message_author
 
-        with open("config.ini", "w") as conf:
-            config.write(conf)
+    # `database` and `server` should be able to be updated. `init_user` above should not.
+    config[guild_id]["database"] = f"{BOT_SERVERS_DB_PATH}{guild_id}.db"
+    config[guild_id]["server"] = guild_name
 
-        embed = discord.Embed(color=Colors.SUCCESS)
-        embed.add_field(name="Success", value="Database initialized")
-    except configparser.DuplicateSectionError:
-        embed = discord.Embed(color=Colors.ERROR)
-        embed.add_field(name="Error", value="Database already exists")
+    with open("config.ini", "w") as conf:
+        config.write(conf)
+
+    embed = discord.Embed(color=Colors.SUCCESS)
+    embed.add_field(name="Success", value="Database initialized")
 
     return embed
 
