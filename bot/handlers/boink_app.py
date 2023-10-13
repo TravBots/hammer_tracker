@@ -4,6 +4,7 @@ import discord
 import sqlite3
 import pandas as pd
 
+from utils.constants import BOT_SERVERS_DB_PATH, GAME_SERVERS_DB_PATH
 from utils.errors import *
 from utils.validators import *
 from utils.decorators import *
@@ -23,8 +24,6 @@ class BoinkApp(BaseApp):
                 await self._info()
             elif self.keyword == "set":
                 await self._set_config_value(self.params)
-            elif self.keyword == "link":
-                await self.link(self.params)
             elif self.keyword == "search":
                 await self.search(self.params, self.message)
             else:
@@ -100,23 +99,14 @@ class BoinkApp(BaseApp):
 
         await self.message.channel.send(embed=embed)
 
-    async def link(self, params):
-        x, y = params[0].split("/")
-        game_server = self.config[self.guild_id]["game_server"]
-        embed = discord.Embed(color=Colors.SUCCESS)
-        embed.add_field(
-            name="",
-            value=f"{game_server}/position_details.php?x={x}&y={y}",
-        )
-        await self.message.channel.send(embed=embed)
-
     @is_dev_or_user_or_admin_privs
     async def search(self, params, message):
         guild_id = str(message.guild.id)
         self.DB = self.config[guild_id]["database"]
 
         ign = " ".join(params).lower()
-        cnx = sqlite3.connect("../core/databases/map.db")
+        # TODO: Don't hardocde am3.db. Dynamically get db nick.
+        cnx = sqlite3.connect(f"{GAME_SERVERS_DB_PATH}am3.db")
         query = f"select * from map_history where lower(player_name) like '{ign}%'"
         df = pd.read_sql_query(query, cnx)
 
