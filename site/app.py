@@ -15,7 +15,7 @@ app.title = "Travstat"
 
 server = app.server
 
-cnx = sqlite3.connect("../core/databases/map.db")
+cnx = sqlite3.connect("../databases/game_servers/am3.db")
 updated_at = pd.read_sql_query(
     "select max(strftime('%Y-%m-%d', datetime(inserted_at, 'unixepoch', 'localtime'))) as updated_at from map_history;",
     cnx,

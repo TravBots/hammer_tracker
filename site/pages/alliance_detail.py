@@ -10,7 +10,7 @@ dash.register_page(__name__, path_template="/alliances/<alliance_id>")
 
 
 def layout(alliance_id=None):
-    cnx = sqlite3.connect("../core/databases/map.db")
+    cnx = sqlite3.connect("../databases/game_servers/am3.db")
     # TODO: Pass alliance_id as a param instead of f-string. This is insecure.
     query = f"select strftime('%Y-%m-%d', datetime(inserted_at, 'unixepoch', 'localtime')) as date, alliance_id, sum(population) as population from map_history where alliance_id = {alliance_id} group by 1,2 order by 1;"
     history = pd.read_sql_query(query, cnx)

@@ -6,7 +6,7 @@ from dash import dash_table, html
 
 dash.register_page(__name__)
 
-cnx = sqlite3.connect("../core/databases/map.db")
+cnx = sqlite3.connect("../databases/game_servers/am3.db")
 
 
 def data_table(cnx: sqlite3.Connection):
