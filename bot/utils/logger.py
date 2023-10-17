@@ -23,7 +23,7 @@ def setup_logging():
 
     logger.basicConfig(
         level=logger.DEBUG,
-        format="%(asctime)s - %(levelname)s - %(message)s",
+        format="%(asctime)s - %(filename)s:%(lineno)d - %(levelname)s - %(message)s",
         handlers=[logger.StreamHandler(), logger.FileHandler(log_path)],
     )
 
