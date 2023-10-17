@@ -1,0 +1,4 @@
+Cron Setup
+
+5 0 * * * cd /projects/hammer_tracker/databases && ./load.py && kill -HUP `ps -C gunicorn fch -o pid | head -n 1` && curl https://www.travstat.com 
+10 0 * * * cd /projects/backup && ./backup.sh
