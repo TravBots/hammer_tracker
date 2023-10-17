@@ -5,6 +5,7 @@ import discord
 from typing import Any, List, Union
 
 from apps import Applications
+from utils.logger import logger
 
 
 class AppFactory:
@@ -31,7 +32,7 @@ class AppFactory:
         return message.author.bot is True
 
     def _get_application(self, message: discord.Message) -> Union[str, Any]:
-        print(message.content.split()[0].strip(Applications.PREFIX))
+        logger.info(message.content.split()[0].strip(Applications.PREFIX))
         return Applications.APPLICATIONS.get(
             message.content.split()[0].strip(Applications.PREFIX)
         )
@@ -46,7 +47,7 @@ class AppFactory:
         if self._is_command(message):
             app = self._get_application(message)
             params = self._get_params(message)
-            print(f"Initial params: {params}")
+            logger.info(f"Initial params: {params}")
             application = app(message, params, self.config)
 
             return application

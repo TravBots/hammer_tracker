@@ -4,6 +4,7 @@ from utils.errors import *
 from utils.validators import *
 from utils.decorators import *
 from utils.printers import *
+from utils.logger import logger
 from funcs import *
 
 
@@ -22,10 +23,12 @@ class DefApp(BaseApp):
             elif self.keyword == "log":
                 await self.log(self.message)
             else:
-                print(
+                logger.error(
                     f"{self.keyword} is not a valid command for {self.__class__.__name__}"
                 )
-        except PermissionError as e:
+                response = invalid_input_error()
+                await self.message.channel.send(embed=response)
+        except Exception as e:
             response = incorrect_roles_error([str(e)])
             await self.message.channel.send(embed=response)
 
@@ -42,11 +45,11 @@ class DefApp(BaseApp):
     @is_dev_or_anvil_or_admin_privs
     async def send(self, message: discord.Message, params):
         if isinstance(message.channel, discord.Thread):
-            print("Message is in a thread")
+            logger.warn("Message is in a thread")
             cfd_id = self._get_cfd_id_from_thread_id(message.channel.id)
         else:
             cfd_id = params[0]
-        print(f"Params: {params}")
+        logger.info(f"Params: {params}")
         amount_sent = int(params[-1].replace(",", ""))
 
         response = send_defense(self.db_path, cfd_id, amount_sent, message)
@@ -74,7 +77,7 @@ class DefApp(BaseApp):
             result = ""
 
             for index, row in enumerate(rows):
-                print(row)
+                logger.info(row)
                 result += f"{index}. <@{row[0]}> ({row[1]:,} @ {row[2]})\n"
             conn.close()
 

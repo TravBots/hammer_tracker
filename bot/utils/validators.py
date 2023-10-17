@@ -5,6 +5,7 @@ import sqlite3
 from typing import List
 
 from utils.constants import dev_ids, MAP_MAX, MAP_MIN
+from utils.logger import logger
 
 
 def roles_are_valid(message, guild_id, config) -> bool:
@@ -86,7 +87,7 @@ def validate_add_input(params: List[str]) -> bool:
     `Here We Go Again`
     We'll use multiple individual validators bundled into this one convenience method
     """
-    print(f"Validating {params}")
+    logger.info(f"Validating {params}")
 
     coordinates = params[-1]
     url = params[-2]
@@ -101,7 +102,7 @@ def validate_add_input(params: List[str]) -> bool:
 
 
 def validate_role_exists(guild: discord.Guild, role):
-    print(f"Validating {role}")
+    logger.info(f"Validating {role}")
     return role.lower() in [role.name.lower() for role in guild.roles]
 
 
