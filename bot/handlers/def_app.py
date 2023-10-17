@@ -26,7 +26,9 @@ class DefApp(BaseApp):
                 logger.error(
                     f"{self.keyword} is not a valid command for {self.__class__.__name__}"
                 )
-        except PermissionError as e:
+                response = invalid_input_error()
+                await self.message.channel.send(embed=response)
+        except Exception as e:
             response = incorrect_roles_error([str(e)])
             await self.message.channel.send(embed=response)
 

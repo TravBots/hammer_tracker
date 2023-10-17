@@ -31,7 +31,9 @@ class BoinkApp(BaseApp):
                 logger.error(
                     f"{self.keyword} is not a valid command for {self.__class__.__name__}"
                 )
-        except PermissionError as e:
+                response = invalid_input_error()
+                await self.message.channel.send(embed=response)
+        except Exception as e:
             response = incorrect_roles_error([str(e)])
             await self.message.channel.send(embed=response)
 
@@ -104,36 +106,58 @@ class BoinkApp(BaseApp):
     async def search(self, params, message):
         guild_id = str(message.guild.id)
         self.DB = self.config[guild_id]["database"]
-
         ign = " ".join(params).lower()
-        # TODO: Don't hardocde am3.db. Dynamically get db nick.
-        cnx = sqlite3.connect(f"{GAME_SERVERS_DB_PATH}am3.db")
-        query = f"select * from map_history where lower(player_name) like '{ign}%'"
-        df = pd.read_sql_query(query, cnx)
 
-        # Get largest timestamp from the df['timestamp'] column
-        timestamp = df["inserted_at"].max()
-        player = df["player_name"][0]
-        player_id = df["player_id"][0]
-        df = df[df["inserted_at"] == timestamp]
-        df = df[df["player_name"] == player]
-        df = df.sort_values(by=["population"], ascending=False)
-        if not df.empty:
-            link = f"[View on Travstat](https://www.travstat.com/players/{player_id})"
-            embed = discord.Embed(title=player, color=Colors.SUCCESS)
-            embed.description = link
-            embed.add_field(
-                name="Village Name | X | Y | Population",
-                value=rows_to_piped_strings(
-                    df,
-                    ["village_name", "x_coordinate", "y_coordinate", "population"],
-                ),
-                inline=False,
+        try:
+            # TODO: Don't hardocde am3.db. Dynamically get db nick.
+            cnx = sqlite3.connect(f"{GAME_SERVERS_DB_PATH}am3.db")
+            query = f"select * from map_history where lower(player_name) like '{ign}%'"
+            df = pd.read_sql_query(query, cnx)
+
+            # Get largest timestamp from the df['timestamp'] column
+            timestamp = df["inserted_at"].max()
+            player = df["player_name"][0]
+            player_id = df["player_id"][0]
+            df = df[df["inserted_at"] == timestamp]
+            df = df[df["player_name"] == player]
+            df = df.sort_values(by=["population"], ascending=False)
+
+            # TODO: Don't hardcode am3 link. Dynamically get server link.
+            df["village_markdown"] = (
+                "["
+                + df["village_name"]
+                + "](https://ts3.x1.america.travian.com/position_details.php?x="
+                + df["x_coordinate"].astype(str)
+                + "&y="
+                + df["y_coordinate"].astype(str)
+                + ")"
             )
-        else:
+            df["coords"] = (
+                df["x_coordinate"].astype(str) + "|" + df["y_coordinate"].astype(str)
+            )
+
+            if not df.empty:
+                link = (
+                    f"[View on Travstat](https://www.travstat.com/players/{player_id})"
+                )
+                embed = discord.Embed(title=player, color=Colors.SUCCESS)
+                embed.description = link
+                embed.add_field(
+                    name="Village Name | X|Y | Population",
+                    value=rows_to_piped_strings(
+                        df,
+                        ["village_markdown", "coords", "population"],
+                    ),
+                    inline=True,
+                )
+                # response = f"```\n{ascii_table(['Village Name', 'X|Y', 'Population'], df[['village_markdown', 'coords', 'population']].values.tolist())}\n```"
+                await message.channel.send(embed=embed)
+            else:
+                raise Exception("No results found")
+        except Exception as e:
+            logger.warn(f"Sending failure message due to exception {e}")
             embed = discord.Embed(color=Colors.ERROR)
             embed.add_field(
                 name="Error", value="No results found for " + ign + " in the map"
             )
-
-        await message.channel.send(embed=embed)
+            await message.channel.send(embed=embed)

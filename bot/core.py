@@ -11,7 +11,7 @@ from utils.errors import *
 from funcs import *
 from utils.hero import *
 from utils.validators import *
-from utils.logger import logger
+from utils.logger import *
 
 from factory import AppFactory
 
@@ -174,6 +174,9 @@ class Core(discord.Client):
 
 
 if __name__ == "__main__":
+    # Init logging first
+    periodic_log_check()
+    
     client = Core(intents=intents)
 
     @client.tree.command()

@@ -28,7 +28,7 @@ class TrackerApp(BaseApp):
                     f"{self.keyword} is not a valid command for {self.__class__.__name__}"
                 )
                 await self.help()
-        except PermissionError as e:
+        except Exception as e:
             response = incorrect_roles_error([str(e)])
             await self.message.channel.send(embed=response)
 
@@ -74,7 +74,7 @@ class TrackerApp(BaseApp):
                     DB, " ".join(params[:-1]), game_server, params[-1]
                 )
         except ValueError:
-            logger.warn(f'ValueError: {params}')
+            logger.warn(f"ValueError: {params}")
             response = get_one_report(DB, " ".join(params), game_server)
         except KeyError:
             response = no_db_error()
