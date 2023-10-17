@@ -3,6 +3,7 @@ import discord
 import configparser
 
 from utils.constants import Colors, BOT_SERVERS_DB_PATH
+from utils.logger import logger
 
 
 def init(config, message):
@@ -36,7 +37,7 @@ def get_sql_by_path(path):
 
 def execute_sql(db_name, sql):
     conn = sqlite3.connect(db_name)
-    print(f"Running sql:\n{sql}")
+    logger.info(f"Running sql:\n{sql}")
     conn.execute(sql)
     conn.commit()
     conn.close()
@@ -143,7 +144,7 @@ def delete_report(db_name, ign, id):
     query = """
         delete from hammers where ID = ? and IGN = ? returning *;
         """
-    print(f"Executing query: {query}")
+    logger.info(f"Executing query: {query}")
     deleted_rows = conn.execute(
         query,
         (
@@ -153,7 +154,7 @@ def delete_report(db_name, ign, id):
     )
 
     for row in deleted_rows:
-        print(row)
+        logger.info(row)
 
     conn.commit()
 
@@ -307,7 +308,7 @@ def insert_defense_thread(db_name, defense_thread_id, cfd_id, name, jump_url):
 
     conn.execute(query, data)
     conn.commit()
-    print(
+    logger.info(
         f"Inserted record into DEFENSE_THREADS:\n{defense_thread_id}\n({cfd_id}\n{name}\n{jump_url})"
     )
     conn.close()
@@ -360,7 +361,7 @@ def list_open_cfds(db_name, game_server):
         cumulative_size = len(embed.title)
 
         for index, cfd in enumerate(response):
-            print(f"Cumulative size: {cumulative_size}")
+            logger.info(f"Cumulative size: {cumulative_size}")
             cumulative_size += len(cfd)
             if cumulative_size < max_size:
                 embed.add_field(
@@ -369,7 +370,7 @@ def list_open_cfds(db_name, game_server):
                     inline=True,
                 )
             else:
-                print(f"Error: Embed total size would be {cumulative_size} characters")
+                logger.warn(f"Error: Embed total size would be {cumulative_size} characters")
     else:
         embed = discord.Embed(color=Colors.SUCCESS)
         embed.add_field(name="All Clear", value="No open CFDs")
@@ -385,7 +386,7 @@ def send_defense(db_name, cfd_id: int, amount_sent: int, message: discord.Messag
         SET amount_submitted = amount_submitted + ? 
         WHERE id = ? returning amount_requested, amount_submitted;
         """
-    print(f"Executing query: {query}")
+    logger.info(f"Executing query: {query}")
     try:
         sent_def = conn.execute(
             query,
@@ -395,7 +396,7 @@ def send_defense(db_name, cfd_id: int, amount_sent: int, message: discord.Messag
         sent_def = sent_def.fetchone()
         amount_requested = sent_def[0]
         amount_submitted = sent_def[1]
-        print(amount_requested, amount_submitted)
+        logger.info(amount_requested, amount_submitted)
 
         conn.commit()
     except TypeError:
@@ -420,7 +421,7 @@ def send_defense(db_name, cfd_id: int, amount_sent: int, message: discord.Messag
         amount_submitted
         ) VALUES (?,?,?,?);
         """
-    print(f"Executing query: {query}")
+    logger.info(f"Executing query: {query}")
     conn.execute(
         query,
         (cfd_id, message.author.id, message.author.name, amount_sent),
@@ -450,7 +451,7 @@ def get_leaderboard(db_name):
         order by 2 desc 
         limit 10;
         """
-    print(f"Executing query: {query}")
+    logger.info(f"Executing query: {query}")
     rows = conn.execute(
         query,
         # (amount_sent, cfd_id),

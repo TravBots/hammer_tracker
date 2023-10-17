@@ -2,6 +2,7 @@ import configparser
 from typing import List
 import discord
 
+from utils.logger import logger
 from utils.constants import BOT_SERVERS_DB_PATH
 
 
@@ -25,7 +26,7 @@ class BaseApp:
             self.user_role = self.config[self.guild_id]["user_role"]
             self.anvil_role = self.config[self.guild_id]["anvil_role"]
         except KeyError:
-            print("Required role not set")
+            logger.error("Required role not set")
 
     async def run(self):
         raise NotImplementedError

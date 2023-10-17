@@ -11,6 +11,7 @@ from utils.errors import *
 from funcs import *
 from utils.hero import *
 from utils.validators import *
+from utils.logger import logger
 
 from factory import AppFactory
 
@@ -123,8 +124,8 @@ class Core(discord.Client):
         """
         End events after they start
         """
-        print(before.status)
-        print(after.status)
+        logger.info(before.status)
+        logger.info(after.status)
         if after.status == discord.EventStatus.active:
             await after.end()
 
@@ -144,7 +145,7 @@ class Core(discord.Client):
                     if len(channel.threads) == 0:
                         continue
 
-                    print(f"Cleaning up threads for {guild}")
+                    logger.info(f"Cleaning up threads for {guild}")
                     conn = sqlite3.connect(f"{BOT_SERVERS_DB_PATH}{guild.id}.db")
                     for thread in channel.threads:
                         query = """
@@ -166,10 +167,10 @@ class Core(discord.Client):
                             cfd_thread[0].split(".")[0], "%Y-%m-%d %H:%M:%S"
                         )
                         if land_time < datetime.utcnow():
-                            print(f"Archiving thread {thread.name}")
+                            logger.info(f"Archiving thread {thread.name}")
                             await thread.edit(archived=True)
             except KeyError:
-                print(f"Failed to clean up threads for {guild}")
+                logger.error(f"Failed to clean up threads for {guild}")
 
 
 if __name__ == "__main__":

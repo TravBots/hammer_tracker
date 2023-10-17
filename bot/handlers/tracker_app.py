@@ -4,13 +4,14 @@ from utils.errors import *
 from utils.validators import *
 from utils.decorators import *
 from utils.printers import *
+from utils.logger import logger
 from funcs import *
 
 
 class TrackerApp(BaseApp):
     def __init__(self, message, params, config):
         super().__init__(message, params, config)
-        print(f"Tracker params: {self.params}")
+        logger.info(f"Tracker params: {self.params}")
 
     async def run(self):
         try:
@@ -23,7 +24,7 @@ class TrackerApp(BaseApp):
             elif self.keyword == "list":
                 await self.list(self.message)
             else:
-                print(
+                logger.error(
                     f"{self.keyword} is not a valid command for {self.__class__.__name__}"
                 )
                 await self.help()
@@ -41,12 +42,12 @@ class TrackerApp(BaseApp):
                 self.DB = self.config[guild_id]["database"]
             except KeyError:
                 response = no_db_error()
-            print(f"Params: {params}")
+            logger.info(f"Params: {params}")
             coordinates = params.pop()
             coordinates = coordinates.replace("/", "|")
-            print(f"Coordinates: {coordinates}")
+            logger.info(f"Coordinates: {coordinates}")
 
-            print(f"Params: {params}")
+            logger.info(f"Params: {params}")
             link = params.pop()
 
             ign = params
@@ -73,7 +74,7 @@ class TrackerApp(BaseApp):
                     DB, " ".join(params[:-1]), game_server, params[-1]
                 )
         except ValueError:
-            print(params)
+            logger.warn(f'ValueError: {params}')
             response = get_one_report(DB, " ".join(params), game_server)
         except KeyError:
             response = no_db_error()
@@ -82,7 +83,7 @@ class TrackerApp(BaseApp):
     @is_dev_or_admin_privs
     async def delete(self, params, message):
         guild_id = str(message.guild.id)
-        print(f"Params: {params}")
+        logger.info(f"Params: {params}")
         ign = params[0]
         id = params[1]
         DB = self.config[guild_id]["database"]

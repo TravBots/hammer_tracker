@@ -9,6 +9,7 @@ from utils.errors import *
 from utils.validators import *
 from utils.decorators import *
 from utils.printers import *
+from utils.logger import logger
 from funcs import *
 
 
@@ -27,7 +28,7 @@ class BoinkApp(BaseApp):
             elif self.keyword == "search":
                 await self.search(self.params, self.message)
             else:
-                print(
+                logger.error(
                     f"{self.keyword} is not a valid command for {self.__class__.__name__}"
                 )
         except PermissionError as e:
@@ -36,7 +37,7 @@ class BoinkApp(BaseApp):
 
     @is_dev_or_guild_admin
     async def _init(self):
-        print("Initializing database...")
+        logger.info("Initializing database...")
 
         response = init(self.config, self.message)
         self.config.read("config.ini")
@@ -79,7 +80,7 @@ class BoinkApp(BaseApp):
         # NOTE: This does limit setting_name to one word
 
         setting_name = params[0]
-        print(f"setting_name: {setting_name}")
+        logger.info(f"setting_name: {setting_name}")
         setting_value = " ".join(params[1:])
         try:
             with open("config.ini", "w") as conf:
@@ -90,7 +91,7 @@ class BoinkApp(BaseApp):
                 name="Success", value=f"Set {setting_name} as {setting_value}"
             )
         except Exception as e:
-            print(e)
+            logger.error(e)
             embed = discord.Embed(color=Colors.ERROR)
             embed.add_field(
                 name="Error",
