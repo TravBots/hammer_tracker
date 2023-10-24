@@ -48,24 +48,26 @@ class Core(discord.Client):
         if app is not None:
             await app.run()
 
-        if coordinates_are_valid(message.content):
-            if not message.author.bot:
-                slash = "/" in message.content
-                pipe = "|" in message.content
+        if not message.author.bot:
+            last_item = message.content.split(" ")[-1].replace("?", "")
+            if coordinates_are_valid(last_item):
+                if not message.author.bot:
+                    slash = "/" in last_item
+                    pipe = "|" in last_item
 
-                if slash:
-                    xy = message.content.split("/")
-                elif pipe:
-                    xy = message.content.split("|")
-                x = xy[0].strip()
-                y = xy[1].strip()
-                game_server = self.config[str(message.guild.id)]["game_server"]
-                embed = discord.Embed(color=Colors.SUCCESS)
-                embed.add_field(
-                    name="",
-                    value=f"{game_server}/position_details.php?x={x}&y={y}",
-                )
-                await message.channel.send(embed=embed)
+                    if slash:
+                        xy = last_item.split("/")
+                    elif pipe:
+                        xy = last_item.split("|")
+                    x = xy[0].strip()
+                    y = xy[1].strip()
+                    game_server = self.config[str(message.guild.id)]["game_server"]
+                    embed = discord.Embed(color=Colors.SUCCESS)
+                    embed.add_field(
+                        name="",
+                        value=f"{game_server}/position_details.php?x={x}&y={y}",
+                    )
+                    await message.channel.send(embed=embed)
 
     async def on_scheduled_event_create(self, event: discord.ScheduledEvent):
         # Refresh config
@@ -176,7 +178,7 @@ class Core(discord.Client):
 if __name__ == "__main__":
     # Init logging first
     periodic_log_check()
-    
+
     client = Core(intents=intents)
 
     @client.tree.command()
