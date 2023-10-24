@@ -111,7 +111,7 @@ class BoinkApp(BaseApp):
         try:
             # TODO: Don't hardocde am3.db. Dynamically get db nick.
             cnx = sqlite3.connect(f"{GAME_SERVERS_DB_PATH}am3.db")
-            query = f"select * from map_history where lower(player_name) like '{ign}%'"
+            query = f"select *, case when capital then village_name || '*' else village_name end as village_name_c from map_history where lower(player_name) like '{ign}%'"
             df = pd.read_sql_query(query, cnx)
 
             # Get largest timestamp from the df['timestamp'] column
@@ -125,7 +125,7 @@ class BoinkApp(BaseApp):
             # TODO: Don't hardcode am3 link. Dynamically get server link.
             df["village_markdown"] = (
                 "["
-                + df["village_name"]
+                + df["village_name_c"]
                 + "](https://ts3.x1.america.travian.com/position_details.php?x="
                 + df["x_coordinate"].astype(str)
                 + "&y="
@@ -138,7 +138,8 @@ class BoinkApp(BaseApp):
 
             if not df.empty:
                 link = (
-                    f"[View on Travstat](https://www.travstat.com/players/{player_id})"
+                    f"[View on Travstat](https://www.travstat.com/players/{player_id}) | "
+                    f"[View in-game](https://ts3.x1.america.travian.com/profile/{player_id})"
                 )
                 embed = discord.Embed(title=player, color=Colors.SUCCESS)
                 embed.description = link
