@@ -2,7 +2,7 @@ import discord
 from discord import app_commands
 from discord.ext import tasks
 import configparser
-from datetime import datetime, timezone
+import datetime
 from typing import Any
 from zoneinfo import ZoneInfo
 
@@ -131,7 +131,7 @@ class Core(discord.Client):
         if after.status == discord.EventStatus.active:
             await after.end()
 
-    @tasks.loop(minutes=10.0)
+    @tasks.loop(seconds=10.0)
     async def close_threads(self):
         # Get defense discord.Channel from config channel
         # Get threads in Channel
@@ -165,14 +165,15 @@ class Core(discord.Client):
                         if cfd_thread is None:
                             continue
 
-                        land_time = datetime.strptime(
+                        land_time = datetime.datetime.strptime(
                             cfd_thread[0].split(".")[0], "%Y-%m-%d %H:%M:%S"
                         )
-                        if land_time < datetime.utcnow():
+                        if land_time < datetime.datetime.utcnow():
                             logger.info(f"Archiving thread {thread.name}")
                             await thread.edit(archived=True)
-            except KeyError:
+            except KeyError as e:
                 logger.error(f"Failed to clean up threads for {guild}")
+                logger.error(e)
 
 
 if __name__ == "__main__":
@@ -262,7 +263,7 @@ if __name__ == "__main__":
         gold_bonus: float = 0.25,
     ):
         """Calculate a crop scout"""
-
+        logger.info(interaction.created_at)
         base_production = crop_production[field_levels] * cropper_type
         with_oases_mill_bakery = (
             (base_production * oasis_bonus)
