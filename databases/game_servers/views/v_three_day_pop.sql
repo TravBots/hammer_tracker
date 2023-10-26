@@ -20,6 +20,7 @@ select
     player_name,
     village_id,
     village_name,
+    today as current_pop,
     today - yesterday as one_day_diff,
     today - two_days_ago as two_day_diff,
     today - three_days_ago as three_day_diff
