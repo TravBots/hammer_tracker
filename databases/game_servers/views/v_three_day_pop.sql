@@ -1,3 +1,6 @@
+DROP VIEW IF EXISTS v_three_day_pop;
+
+create view v_three_day_pop as
 with lags as(
     select 
         date,
