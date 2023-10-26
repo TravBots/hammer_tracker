@@ -165,8 +165,10 @@ class Core(discord.Client):
                         if cfd_thread is None:
                             continue
 
+                        logger.info(cfd_thread[0])
                         land_time = datetime.datetime.strptime(
-                            cfd_thread[0].split(".")[0], "%Y-%m-%d %H:%M:%S"
+                            cfd_thread[0].replace("+", ".").split(".")[0],
+                            "%Y-%m-%d %H:%M:%S",
                         )
                         logger.info(land_time)
                         if land_time < datetime.datetime.utcnow():
