@@ -131,7 +131,7 @@ class Core(discord.Client):
         if after.status == discord.EventStatus.active:
             await after.end()
 
-    @tasks.loop(seconds=10.0)
+    @tasks.loop(minutes=10.0)
     async def close_threads(self):
         # Get defense discord.Channel from config channel
         # Get threads in Channel
@@ -165,12 +165,11 @@ class Core(discord.Client):
                         if cfd_thread is None:
                             continue
 
-                        logger.info(cfd_thread[0])
                         land_time = datetime.datetime.strptime(
                             cfd_thread[0].replace("+", ".").split(".")[0],
                             "%Y-%m-%d %H:%M:%S",
                         )
-                        logger.info(land_time)
+
                         if land_time < datetime.datetime.utcnow():
                             logger.info(f"Archiving thread {thread.name}")
                             await thread.edit(archived=True)
