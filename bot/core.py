@@ -168,6 +168,7 @@ class Core(discord.Client):
                         land_time = datetime.datetime.strptime(
                             cfd_thread[0].split(".")[0], "%Y-%m-%d %H:%M:%S"
                         )
+                        logger.info(land_time)
                         if land_time < datetime.datetime.utcnow():
                             logger.info(f"Archiving thread {thread.name}")
                             await thread.edit(archived=True)
