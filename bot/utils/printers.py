@@ -1,6 +1,17 @@
+from table2ascii import table2ascii as t2a, PresetStyle
+
+
 def rows_to_piped_strings(df, columns):
-    rows = [" | ".join(map(str, row)) for row in df[columns].values]
-    return "\n".join(rows)
+    # Calculate max widths for each column
+    max_widths = [max([len(str(val)) for val in df[col]]) for col in columns]
+
+    # Use max widths to format each row
+    rows = [
+        " | ".join([f"{str(val).ljust(width)}" for val, width in zip(row, max_widths)])
+        for row in df[columns].values
+    ]
+
+    return "\t\t\t\n".join(rows)
 
 
 def asterisk_table(df, columns):
@@ -42,3 +53,7 @@ def asterisk_table(df, columns):
     table.append("=" * (sum(col_widths.values()) + len(columns) + 1))
 
     return "\n".join(table)
+
+
+def ascii_table(header, body):
+    return t2a(header=header, body=body, first_col_heading=True)

@@ -370,7 +370,9 @@ def list_open_cfds(db_name, game_server):
                     inline=True,
                 )
             else:
-                logger.warn(f"Error: Embed total size would be {cumulative_size} characters")
+                logger.warn(
+                    f"Error: Embed total size would be {cumulative_size} characters"
+                )
     else:
         embed = discord.Embed(color=Colors.SUCCESS)
         embed.add_field(name="All Clear", value="No open CFDs")
@@ -472,3 +474,11 @@ def get_leaderboard(db_name):
     conn.close()
 
     return embed
+
+
+def process_name(x):
+    first_part = str(x).split(" ")[0].strip(".")
+    if first_part.isnumeric():
+        logger.info(f"logging x: {x}. stripped: {str(x).replace('.', '')}")
+        return str(x).replace(".", "")
+    return x

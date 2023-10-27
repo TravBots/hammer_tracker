@@ -111,26 +111,39 @@ class BoinkApp(BaseApp):
         try:
             # TODO: Don't hardocde am3.db. Dynamically get db nick.
             cnx = sqlite3.connect(f"{GAME_SERVERS_DB_PATH}am3.db")
-            query = f"select *, case when capital then village_name || '*' else village_name end as village_name_c from map_history where lower(player_name) like '{ign}%'"
+
+            # First attempt an exact match
+            query = f"select * from x_world where lower(player_name) = '{ign}'"
             df = pd.read_sql_query(query, cnx)
 
+            if df.empty:
+                # If no exact match, try a partial match
+                logger.info(f"No exact match found for {ign}. Trying partial match")
+                query = f"select * from x_world where lower(player_name) like '{ign}%'"
+                df = pd.read_sql_query(query, cnx)
+
             # Get largest timestamp from the df['timestamp'] column
-            timestamp = df["inserted_at"].max()
+            # timestamp = df["inserted_at"].max()
             player = df["player_name"][0]
             player_id = df["player_id"][0]
-            df = df[df["inserted_at"] == timestamp]
+            # df = df[df["inserted_at"] == timestamp]
             df = df[df["player_name"] == player]
             df = df.sort_values(by=["population"], ascending=False)
+
+            df["village_name"] = df["village_name"].apply(process_name)
 
             # TODO: Don't hardcode am3 link. Dynamically get server link.
             df["village_markdown"] = (
                 "["
-                + df["village_name_c"]
+                + df["village_name"]
                 + "](https://ts3.x1.america.travian.com/position_details.php?x="
                 + df["x_coordinate"].astype(str)
                 + "&y="
                 + df["y_coordinate"].astype(str)
                 + ")"
+            )
+            df.loc[df["capital"] == 1, "village_markdown"] = (
+                df["village_markdown"] + "*"
             )
             df["coords"] = (
                 df["x_coordinate"].astype(str) + "|" + df["y_coordinate"].astype(str)
