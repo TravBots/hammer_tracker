@@ -24,6 +24,12 @@ def pop_table(player_id, cnx):
                 "presentation": "markdown",
             },
             {
+                "name": "Founded",
+                "id": "founded",
+                "type": "text",
+                "presentation": "markdown",
+            },
+            {
                 "name": "Current Population",
                 "id": "current_pop",
                 "type": "numeric",

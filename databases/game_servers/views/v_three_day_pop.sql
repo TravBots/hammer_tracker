@@ -8,6 +8,7 @@ with lags as(
         player_name, 
         village_id,
         village_name,
+        first_value(date) over(partition by village_id order by date) as founded,
         population as today, 
         coalesce(lag(population, 1) over(partition by village_id order by date),0) as yesterday,
         coalesce(lag(population, 2) over(partition by village_id order by date),0) as two_days_ago,
@@ -16,6 +17,7 @@ with lags as(
     group by 1, 2, 3, 4, 5
 )
 select
+    founded,
     player_id,
     player_name,
     village_id,
