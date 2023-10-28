@@ -1,12 +1,73 @@
 import sqlite3
 
 import dash
+import dash_bootstrap_components as dbc
 import pandas as pd
 import plotly.express as px
 import plotly.graph_objects as go
-from dash import dcc, html
+from dash import dcc, html, dash_table
 
 dash.register_page(__name__, path_template="/players/<player_id>")
+
+
+def pop_table(player_id, cnx):
+    village_pop_query = f"select * from v_three_day_pop where player_id = {player_id};"
+    print(village_pop_query)
+
+    df = pd.read_sql_query(village_pop_query, cnx)
+    pop_table = dash_table.DataTable(
+        columns=[
+            {
+                "name": "Village Name",
+                "id": "village_name",
+                "type": "text",
+                "presentation": "markdown",
+            },
+            {
+                "name": "Current Population",
+                "id": "current_pop",
+                "type": "numeric",
+                "presentation": "markdown",
+            },
+            {
+                "name": "One Day Diff",
+                "id": "one_day_diff",
+                "type": "numeric",
+                "presentation": "markdown",
+            },
+            {
+                "name": "Two Day Diff",
+                "id": "two_day_diff",
+                "type": "numeric",
+                "presentation": "markdown",
+            },
+            {
+                "name": "Three Day Diff",
+                "id": "three_day_diff",
+                "type": "numeric",
+                "presentation": "markdown",
+            },
+        ],
+        data=df.to_dict("records"),
+        filter_action="native",
+        sort_action="native",
+        page_action="native",
+        page_current=0,
+        page_size=25,
+        style_table={
+            "width": "90%",
+        },
+        style_data={
+            "width": "150px",
+            "minWidth": "150px",
+            "maxWidth": "150px",
+            "overflow": "hidden",
+            "textOverflow": "ellipsis",
+        },
+        markdown_options={"link_target": "_self", "html": True},
+    )
+
+    return pop_table
 
 
 def layout(player_id=None):
@@ -41,7 +102,7 @@ def layout(player_id=None):
         alliance_tag as 'Alliance Name',
         player_name as 'Player Name',
         village_name as 'Village Name',
-        case 
+        case
             when tribe_id = 1 then 'Roman'
             when tribe_id = 2 then 'Teuton'
             when tribe_id = 3 then 'Gaul'
@@ -82,9 +143,19 @@ def layout(player_id=None):
         fillcolor="#7f7f7f",
         opacity=0.3,
     )
+
     return html.Div(
         [
-            dcc.Graph(figure=fig, config={"displaylogo": False}),
-            dcc.Graph(figure=map, config={"displaylogo": False}),
-        ]
+            dbc.Container(
+                [
+                    dbc.Row(
+                        [
+                            dbc.Col(pop_table(player_id, cnx)),
+                        ]
+                    ),
+                    dbc.Col(dcc.Graph(figure=fig, config={"displaylogo": False})),
+                    dcc.Graph(figure=map, config={"displaylogo": False}),
+                ]
+            ),
+        ],
     )
