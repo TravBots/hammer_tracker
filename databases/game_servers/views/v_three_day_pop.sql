@@ -13,6 +13,7 @@ with lags as(
         coalesce(lag(population, 2) over(partition by village_id order by date),0) as two_days_ago,
         coalesce(lag(population, 3) over(partition by village_id order by date),0) as three_days_ago
     from v_map_history 
+    where player_id = 76
     group by 1, 2, 3, 4, 5
 )
 select
@@ -25,5 +26,5 @@ select
     today - two_days_ago as two_day_diff,
     today - three_days_ago as three_day_diff
 from lags 
-where date = current_date
+where date = (select max(date) from lags)
 ;
