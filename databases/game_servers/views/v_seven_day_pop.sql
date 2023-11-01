@@ -1,3 +1,4 @@
+DROP VIEW IF EXISTS v_three_day_pop;
 DROP VIEW IF EXISTS v_seven_day_pop;
 
 create view v_seven_day_pop as
