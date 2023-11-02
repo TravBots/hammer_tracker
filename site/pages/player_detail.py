@@ -190,6 +190,13 @@ def layout(player_id=None):
 
 
 def add_pop_diff_markdown(df):
+    df["today"] = df["today"].astype(str)
+    df["yesterday"] = df["yesterday"].astype(str)
+    df["two_days_ago"] = df["two_days_ago"].astype(str)
+    df["three_days_ago"] = df["three_days_ago"].astype(str)
+    df["four_days_ago"] = df["four_days_ago"].astype(str)
+    df["five_days_ago"] = df["five_days_ago"].astype(str)
+
     for index, row in df.iterrows():
         today_markdown = generate_markdown(row["today"], row["yesterday"])
         yesterday_markdown = generate_markdown(row["yesterday"], row["two_days_ago"])
@@ -225,6 +232,9 @@ def add_pop_diff_markdown(df):
 
 
 def generate_markdown(first, second):
+    first = int(first)
+    second = int(second)
+
     if first == 0:
         return ""
 
