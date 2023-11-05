@@ -155,16 +155,14 @@ class BoinkApp(BaseApp):
                     f"[View in-game](https://ts3.x1.america.travian.com/profile/{player_id})"
                 )
                 embed = discord.Embed(title=player, color=Colors.SUCCESS)
-                embed.description = link
-                embed.add_field(
-                    name="Village Name | X|Y | Population",
-                    value=rows_to_piped_strings(
-                        df,
-                        ["village_markdown", "coords", "population"],
-                    ),
-                    inline=True,
+                embed.description = (
+                    link + "\n\n" + "**Village Name | X|Y | Population**\n"
                 )
-                # response = f"```\n{ascii_table(['Village Name', 'X|Y', 'Population'], df[['village_markdown', 'coords', 'population']].values.tolist())}\n```"
+                embed.description += rows_to_piped_strings(
+                    pd.DataFrame(df),
+                    ["village_markdown", "coords", "population"],
+                )
+
                 await message.channel.send(embed=embed)
             else:
                 raise Exception("No results found")
