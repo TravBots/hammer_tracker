@@ -14,11 +14,13 @@ from utils.validators import *
 from utils.logger import *
 
 from factory import AppFactory
+from funcs import time_until_next_occurrence
 
 from interactions.cfd import Cfd
 
 intents = discord.Intents.all()
 intents.message_content = True
+sql_time = datetime.time(hour=0, minute=30)
 
 
 class Core(discord.Client):
@@ -39,6 +41,11 @@ class Core(discord.Client):
 
     async def setup_hook(self):
         self.close_threads.start()
+
+        logger.info(
+            f"Scheduling SQL updates check event at: {sql_time}, time until: {str(time_until_next_occurrence(sql_time))}"
+        )
+        self.check_sql_updates.start()
 
         await self.tree.sync()
 
@@ -176,6 +183,11 @@ class Core(discord.Client):
             except KeyError as e:
                 logger.error(f"Failed to clean up threads for {guild}")
                 logger.error(e)
+
+    @tasks.loop(time=sql_time)
+    async def check_sql_updates(self):
+        logger.info("Checking for SQL updates")
+        # Add the code here dummy
 
 
 if __name__ == "__main__":

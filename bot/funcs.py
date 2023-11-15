@@ -2,7 +2,9 @@ import sqlite3
 import discord
 import configparser
 
-from utils.constants import Colors, BOT_SERVERS_DB_PATH
+from datetime import datetime, timedelta, time
+
+from utils.constants import *
 from utils.logger import logger
 
 
@@ -39,6 +41,15 @@ def execute_sql(db_name, sql):
     conn = sqlite3.connect(db_name)
     logger.info(f"Running sql:\n{sql}")
     conn.execute(sql)
+    conn.commit()
+    conn.close()
+
+
+def execute_sql_with_values(db_name, sql, values):
+    conn = sqlite3.connect(db_name)
+    logger.info(f"Running sql:\n{sql}")
+    logger.info(f"Values:\n{values}")
+    conn.execute(sql, values)
     conn.commit()
     conn.close()
 
@@ -482,3 +493,32 @@ def process_name(x):
         logger.info(f"logging x: {x}. stripped: {str(x).replace('.', '')}")
         return str(x).replace(".", "")
     return x
+
+
+def time_until_next_occurrence(target_time):
+    # Get the current time
+    now = datetime.now()
+
+    # Create a datetime object for the target time today
+    target_datetime = datetime.combine(now.date(), target_time)
+
+    # Check if the target time is later today or tomorrow
+    if target_datetime < now:
+        # Target time has already passed today, calculate until next day
+        target_datetime += timedelta(days=1)
+
+    # Calculate the time difference
+    return target_datetime - now
+
+
+def get_player_id_for_player(ign):
+    # TODO: Don't hardocde am3.db. Dynamically get db nick.
+    cnx = sqlite3.connect(f"{GAME_SERVERS_DB_PATH}am3.db")
+    query = f"select player_id from x_world where lower(player_name) = '{ign.lower()}'"
+    try:
+        player_id = cnx.execute(query).fetchone()[0]
+        logger.info(f"Player ID: {player_id} for player: {ign}")
+        return player_id
+    except TypeError:
+        logger.error(f"Player ID not found for player: {ign}")
+        return None

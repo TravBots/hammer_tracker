@@ -49,3 +49,13 @@ def is_dev_or_anvil_or_admin_privs(func):
             raise PermissionError(instance.admin_role + ", " + instance.anvil_role)
 
     return wrapper
+
+
+def is_dev(func):
+    def wrapper(instance, *args, **kwargs):
+        if is_dev(instance.message):
+            return func(instance, *args, **kwargs)
+        else:
+            raise PermissionError("Dev")
+
+    return wrapper
