@@ -19,6 +19,10 @@ class NotificationApp(BaseApp):
                 await self.force_run()
             elif self.keyword == "subscribe":
                 await self.subscribe()
+            elif self.keyword == "list":
+                await self.list()
+            elif self.keyword == "unsubscribe":
+                await self.unsubscribe()
             else:
                 logger.error(
                     f"{self.keyword} is not a valid command for {self.__class__.__name__}"
@@ -56,6 +60,8 @@ class NotificationApp(BaseApp):
         notif_code = self.params[0]
         player_name = self.params[1]
 
+        # TODO: Insert validation around notification codes
+
         player_id = get_player_id_for_player(player_name)
         if player_id is None:
             embed = discord.Embed(
@@ -84,7 +90,70 @@ class NotificationApp(BaseApp):
         )
         await self.message.channel.send(embed=embed)
 
+    @is_dev_or_user_or_admin_privs
+    async def list(self):
+        DB = self.config[self.guild_id]["database"]
+        query = "SELECT * FROM notification_subscriptions;"
+
+        results = query_sql(DB, query)
+
+        logger.info(f"Results: {results}")
+
+        embed = discord.Embed(
+            title="Notification Subscriptions",
+            color=Colors.SUCCESS,
+        )
+
+        for result in results:
+            logger.info(f"Result: {result}")
+            embed.add_field(
+                name=f"{result['NOTIFICATION_CODE']} - {result['TARGET_ID']}",
+                value=f"Channel: {result['CHANNEL_ID']}\nDiscord: {result['DISCORD_ID']}",
+                inline=False,
+            )
+
+        await self.message.channel.send(embed=embed)
+
+    @is_dev_or_user_or_admin_privs
+    async def unsubscribe(self):
+        notif_code = self.params[0]
+        player_name = self.params[1]
+
+        # TODO: Insert validation around notification codes
+
+        player_id = get_player_id_for_player(player_name)
+        if player_id is None:
+            embed = discord.Embed(
+                title="Subscribe Failed",
+                description=f"Player `{player_name}` not found",
+                color=Colors.ERROR,
+            )
+            await self.message.channel.send(embed=embed)
+            return
+
+        channel_id = self.message.channel.mention
+        discord_id = self.message.author.mention
+
+        DB = self.config[self.guild_id]["database"]
+        query = """
+            DELETE FROM notification_subscriptions
+            WHERE CHANNEL_ID = ?
+            AND NOTIFICATION_CODE = ?
+            AND TARGET_ID = ?
+            AND DISCORD_ID = ?
+        """
+        values = (channel_id, notif_code, player_id, discord_id)
+        execute_sql_with_values(DB, query, values)
+
+        embed = discord.Embed(
+            title="Unsubscribe Success",
+            description=f"{discord_id} on {channel_id} unsubscribed from notification: `{notif_code}`, for player `{player_name}`",
+            color=Colors.SUCCESS,
+        )
+        await self.message.channel.send(embed=embed)
+
     async def run_notification_task(self):
+        logger.info("Running notification task")
         DB = self.config[self.guild_id]["database"]
 
         # TODO: Don't hardocde am3.db. Dynamically get db nick.
@@ -102,4 +171,6 @@ class NotificationApp(BaseApp):
         cursor = cnx.cursor()
         cursor.execute(query)
         results = cursor.fetchall()
-        print(results)
+        logger.info(f"Results: {results}")
+
+        logger.info("Finished notification task")

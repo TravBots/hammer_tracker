@@ -30,6 +30,20 @@ def init(config, message):
     return embed
 
 
+def query_sql(db_name, sql):
+    conn = sqlite3.connect(db_name)
+    logger.info(f"Running sql:\n{sql}")
+    cursor = conn.execute(sql)
+
+    desc = cursor.description
+    column_names = [col[0] for col in desc]
+    data = [dict(zip(column_names, row)) for row in cursor.fetchall()]
+
+    conn.close()
+
+    return data
+
+
 def get_sql_by_path(path):
     with open(path, "r") as sql_file:
         sql = sql_file.read()
