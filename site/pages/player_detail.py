@@ -18,6 +18,7 @@ def pop_table(player_id, cnx):
     df = pd.read_sql_query(village_pop_query, cnx)
     working_date = datetime.strptime(df["load_date"][0], "%Y-%m-%d")
 
+    df = add_total_row(df)
     add_pop_diff_markdown(df)
 
     pop_table = dash_table.DataTable(
@@ -93,6 +94,7 @@ def pop_table(player_id, cnx):
             for c in ["village_name", "founded"]
         ],
         markdown_options={"link_target": "_self", "html": True},
+        sort_action="native",
     )
 
     return pop_table
@@ -247,3 +249,19 @@ def generate_markdown(first, second):
     else:
         markdown = f"({pop_diff})"
     return markdown
+
+
+def add_total_row(df):
+    total_row = {
+        "village_name": "Total",
+        "founded": "",
+        "today": df["today"].sum(),
+        "yesterday": df["yesterday"].sum(),
+        "two_days_ago": df["two_days_ago"].sum(),
+        "three_days_ago": df["three_days_ago"].sum(),
+        "four_days_ago": df["four_days_ago"].sum(),
+        "five_days_ago": df["five_days_ago"].sum(),
+        "six_days_ago": df["six_days_ago"].sum(),
+    }
+    df = df.append(total_row, ignore_index=True)
+    return df
