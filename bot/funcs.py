@@ -44,6 +44,20 @@ def query_sql(db_name, sql):
     return data
 
 
+def query_sql_with_values(db_name, sql, vals):
+    conn = sqlite3.connect(db_name)
+    logger.info(f"Running sql:\n{sql}")
+    cursor = conn.execute(sql, vals)
+
+    desc = cursor.description
+    column_names = [col[0] for col in desc]
+    data = [dict(zip(column_names, row)) for row in cursor.fetchall()]
+
+    conn.close()
+
+    return data
+
+
 def get_sql_by_path(path):
     with open(path, "r") as sql_file:
         sql = sql_file.read()
@@ -536,3 +550,10 @@ def get_player_id_for_player(ign):
     except TypeError:
         logger.error(f"Player ID not found for player: {ign}")
         return None
+
+
+def validate_notification_code(notif_code):
+    if notif_code in Notifications.__dict__.values():
+        return True
+    else:
+        return False

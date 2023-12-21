@@ -105,7 +105,6 @@ class NotificationApp(BaseApp):
         )
 
         for result in results:
-            logger.info(f"Result: {result}")
             embed.add_field(
                 name=f"{result['NOTIFICATION_CODE']} - {result['TARGET_ID']}",
                 value=f"Channel: {result['CHANNEL_ID']}\nDiscord: {result['DISCORD_ID']}",
@@ -153,12 +152,39 @@ class NotificationApp(BaseApp):
         await self.message.channel.send(embed=embed)
 
     async def run_notification_task(self):
-        logger.info("Running notification task")
-        DB = self.config[self.guild_id]["database"]
+        logger.info("****** Running notification task ******")
 
         # TODO: Don't hardocde am3.db. Dynamically get db nick.
-        cnx = sqlite3.connect(f"{GAME_SERVERS_DB_PATH}am3.db")
+        game_DB = f"{GAME_SERVERS_DB_PATH}am3.db"
+        discord_DB = f"{BOT_SERVERS_DB_PATH}{self.config['default']['guild_id']}.db"
 
+        (new_date, old_date) = self.get_latest_two_dates(game_DB)
+        logger.info(f"[NotifTask] Old date: {old_date}, New date: {new_date}")
+
+        for notif in Notifications.get_values():
+            # Skip the actual get_values call
+            if notif == Notifications.get_values:
+                continue
+            logger.info(f"[NotifTask] Processing notification: {notif}")
+
+            # Get subscriptions for the notification code
+            subscriptions = self.get_subscriptions_for_notification_code(
+                discord_DB, notif
+            )
+
+            notif_embeds = []
+            for sub in subscriptions:
+                logger.info(f"[NotifTask] Processing subscription: {sub}")
+                notif = self.notif_action_handler(
+                    notif, sub, old_date, new_date, game_DB
+                )
+                if notif is not None:
+                    notif_embeds.append(notif)
+
+        logger.info("****** Finished notification task ******")
+        return notif_embeds
+
+    def get_latest_two_dates(self, DB):
         # Query to pull two most recent unique inserted_at dates from the map_history table
         query = """
             SELECT DISTINCT inserted_at
@@ -166,11 +192,60 @@ class NotificationApp(BaseApp):
             ORDER BY inserted_at DESC
             LIMIT 2
         """
+        results = query_sql(DB, query)
+        # logger.debug(f"Results: {results}")
+        return (results[0]["inserted_at"], results[1]["inserted_at"])
 
-        # Execute query and store results
-        cursor = cnx.cursor()
-        cursor.execute(query)
-        results = cursor.fetchall()
-        logger.info(f"Results: {results}")
+    def get_subscriptions_for_notification_code(self, DB, notif_code):
+        query = """
+            SELECT *
+            FROM notification_subscriptions
+            WHERE NOTIFICATION_CODE = ?
+        """
 
-        logger.info("Finished notification task")
+        results = query_sql_with_values(DB, query, (notif_code,))
+
+        logger.debug(f"Results: {results}")
+        return results
+
+    def notif_action_handler(self, notif_code, subscription, old_date, new_date, DB):
+        if notif_code == Notifications.NEW_VILLAGE:
+            return self.new_village_handler(subscription, old_date, new_date, DB)
+        else:
+            logger.error(f"Unknown notification code: {notif_code}")
+            raise Exception(f"Unknown notification code: {notif_code}")
+
+    def new_village_handler(self, subscription, old_date, new_date, DB):
+        target_id = subscription["TARGET_ID"]
+        discord_id = subscription["DISCORD_ID"]
+        channel_id = subscription["CHANNEL_ID"]
+
+        # Get the number of villages the player has for both old and new date
+        query = """
+            SELECT COUNT(*)
+            FROM map_history
+            WHERE inserted_at = ?
+            AND player_id = ?
+        """
+        old_count = query_sql_with_values(DB, query, (old_date, target_id))[0][
+            "COUNT(*)"
+        ]
+        new_count = query_sql_with_values(DB, query, (new_date, target_id))[0][
+            "COUNT(*)"
+        ]
+        logger.info(f"[NotifTask] Old count: {old_count}, New count: {new_count}")
+
+        # If the player has more villages, send a notification
+        if new_count > old_count:
+            logger.info(
+                f"[NotifTask] Sending notification for target: {target_id}; discord: {discord_id}, channel: {channel_id}"
+            )
+            embed = discord.Embed(
+                title="New Village Notification",
+                description=f"Player `{target_id}` has gained a new village",
+                color=Colors.SUCCESS,
+            )
+            return (embed, subscription)
+        else:
+            logger.info(f"[NotifTask] No notification for sub: {subscription}")
+            return None

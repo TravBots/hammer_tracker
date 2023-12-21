@@ -13,6 +13,7 @@ from utils.hero import *
 from utils.validators import *
 from utils.logger import *
 
+from handlers.notification_app import NotificationApp
 from factory import AppFactory
 from funcs import time_until_next_occurrence
 
@@ -20,7 +21,8 @@ from interactions.cfd import Cfd
 
 intents = discord.Intents.all()
 intents.message_content = True
-sql_time = datetime.time(hour=0, minute=30)
+
+global client
 
 
 class Core(discord.Client):
@@ -41,10 +43,6 @@ class Core(discord.Client):
 
     async def setup_hook(self):
         self.close_threads.start()
-
-        logger.info(
-            f"Scheduling SQL updates check event at: {sql_time}, time until: {str(time_until_next_occurrence(sql_time))}"
-        )
         self.check_sql_updates.start()
 
         await self.tree.sync()
@@ -184,10 +182,24 @@ class Core(discord.Client):
                 logger.error(f"Failed to clean up threads for {guild}")
                 logger.error(e)
 
-    @tasks.loop(time=sql_time)
+    @tasks.loop(minutes=1440.0)
     async def check_sql_updates(self):
         logger.info("Checking for SQL updates")
-        # Add the code here dummy
+        notif_embeds = await NotificationApp(
+            None, None, self.config
+        ).run_notification_task()
+
+        # @TODO: Remove the need for a default guild id
+        guild_id = int(self.config["default"]["guild_id"])
+        # logger.info(f"Sending notifications for guild {guild_id}")
+        # logger.info(f"Guild Object: {client}")
+        # logger.info(f"Guild Object: {await client.fetch_guild(guild_id)}")
+        guild = await client.fetch_guild(guild_id)
+        for embed, subscription in notif_embeds:
+            channel_id = subscription["CHANNEL_ID"]
+            channel = await guild.fetch_channel(channel_id.strip("<#").strip(">"))
+            logger.info(f"Sending notification to channel: {channel}")
+            await channel.send(embed=embed)
 
 
 if __name__ == "__main__":
