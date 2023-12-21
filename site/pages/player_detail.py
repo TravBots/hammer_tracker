@@ -183,11 +183,49 @@ def layout(player_id=None):
                             dbc.Col(pop_table(player_id, cnx)),
                         ]
                     ),
+                    publish_avg_7_day_change(player_id, cnx),
                     dbc.Col(dcc.Graph(figure=fig, config={"displaylogo": False})),
                     dcc.Graph(figure=map, config={"displaylogo": False}),
                 ]
             ),
         ],
+    )
+
+
+def publish_avg_7_day_change(player_id, cnx):
+    query = f"""SELECT inserted_at, player_id, SUM(population) AS total_population, COUNT(village_id) AS village_count
+                FROM map_history
+                WHERE player_id = {player_id}
+                GROUP BY inserted_at, player_id;"""
+    df = pd.read_sql_query(query, cnx)
+
+    df = df.sort_values(by="inserted_at")
+    df["population_change"] = df["total_population"].diff(periods=7)
+    average_change = df["population_change"].mean()
+
+    df["inserted_at"] = pd.to_datetime(df["inserted_at"], unit="s")
+    df["new_village_settled"] = df["village_count"].diff() > 0
+    df["time_to_settle"] = df[df["new_village_settled"]]["inserted_at"].diff()
+    df["time_to_settle_days"] = df["time_to_settle"].dt.total_seconds() / (60 * 60 * 24)
+    average_days_to_settle = df["time_to_settle_days"].mean()
+
+    print(average_change)
+    print(average_days_to_settle)
+
+    average_change_label = html.Label(
+        f"Average 7 Day Change: {average_change:,.2f}",
+        style={"font-weight": "bold", "font-size": "large"},
+    )
+    average_days_to_settle_label = html.Label(
+        f"Average Days to Settle: {average_days_to_settle:,.2f}",
+        style={"font-weight": "bold", "font-size": "large"},
+    )
+
+    return dbc.Row(
+        [
+            dbc.Col(average_change_label),
+            dbc.Col(average_days_to_settle_label),
+        ]
     )
 
 
