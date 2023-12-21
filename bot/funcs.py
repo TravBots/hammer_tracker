@@ -552,8 +552,32 @@ def get_player_id_for_player(ign):
         return None
 
 
+def get_alliance_id_for_alliance(alliance):
+    # TODO: Don't hardocde am3.db. Dynamically get db nick.
+    cnx = sqlite3.connect(f"{GAME_SERVERS_DB_PATH}am3.db")
+    query = f"select alliance_id from x_world where lower(alliance_tag) = '{alliance.lower()}'"
+    try:
+        alliance_id = cnx.execute(query).fetchone()[0]
+        logger.info(f"Allance ID: {alliance_id} for alliance: {alliance}")
+        return alliance_id
+    except TypeError:
+        logger.error(f"Alliance ID not found for alliance: {alliance}")
+        return None
+
+
 def validate_notification_code(notif_code):
     if notif_code in Notifications.__dict__.values():
         return True
     else:
         return False
+
+
+def get_quad_limits(quad):
+    if quad == "NE":
+        return 0, 200, 0, 200
+    elif quad == "NW":
+        return -200, 0, 0, 200
+    elif quad == "SE":
+        return 0, 200, -200, 0
+    elif quad == "SW":
+        return -200, 0, -200, 0

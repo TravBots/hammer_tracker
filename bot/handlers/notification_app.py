@@ -1,6 +1,6 @@
 from .base_app import BaseApp
 
-import sqlite3
+import json
 
 from utils.decorators import *
 from utils.constants import *
@@ -58,6 +58,63 @@ class NotificationApp(BaseApp):
     @is_dev_or_user_or_admin_privs
     async def subscribe(self):
         notif_code = self.params[0]
+
+        if notif_code not in Notifications.get_values():
+            embed = discord.Embed(
+                title="Subscribe Failed",
+                description=f"Notification code `{notif_code}` not found",
+                color=Colors.ERROR,
+            )
+            await self.message.channel.send(embed=embed)
+            return
+
+        if notif_code == Notifications.NEW_VILLAGE:
+            await self.handle_new_village_subscription()
+        elif notif_code == Notifications.ALLIANCE_QUAD_NEW_VILLAGE:
+            await self.handle_alliance_quad_new_village_subscription()
+
+    async def handle_alliance_quad_new_village_subscription(self):
+        alliance_name = self.params[1]
+        quad = self.params[2]
+
+        if quad not in ["NW", "NE", "SW", "SE"]:
+            embed = discord.Embed(
+                title="Subscribe Failed",
+                description=f"Quad `{quad}` not found",
+                color=Colors.ERROR,
+            )
+            await self.message.channel.send(embed=embed)
+            return
+
+        alliance_id = get_alliance_id_for_alliance(alliance_name)
+        guild_id = self.message.guild.id
+        channel_id = self.message.channel.mention
+        discord_id = self.message.author.mention
+        extra_info = '{"quad": "' + quad + '"}'
+
+        DB = self.config[self.guild_id]["database"]
+        query = """
+            INSERT INTO notification_subscriptions (GUILD_ID, CHANNEL_ID, NOTIFICATION_CODE, TARGET_ID, DISCORD_ID, EXTRA_INFO)
+            VALUES (?, ?, ?, ?, ?, ?)
+        """
+        values = (
+            guild_id,
+            channel_id,
+            Notifications.ALLIANCE_QUAD_NEW_VILLAGE,
+            alliance_id,
+            discord_id,
+            extra_info,
+        )
+        execute_sql_with_values(DB, query, values)
+
+        embed = discord.Embed(
+            title="Subscribe Success",
+            description=f"{discord_id} on {channel_id} subscribed to notification: `{Notifications.ALLIANCE_QUAD_NEW_VILLAGE}`, for alliance `{alliance_name}`, quad `{quad}`",
+            color=Colors.SUCCESS,
+        )
+        await self.message.channel.send(embed=embed)
+
+    async def handle_new_village_subscription(self):
         player_name = self.params[1]
 
         # TODO: Insert validation around notification codes
@@ -72,20 +129,28 @@ class NotificationApp(BaseApp):
             await self.message.channel.send(embed=embed)
             return
 
+        guild_id = self.message.guild.id
         channel_id = self.message.channel.mention
         discord_id = self.message.author.mention
 
         DB = self.config[self.guild_id]["database"]
         query = """
-            INSERT INTO notification_subscriptions (CHANNEL_ID, NOTIFICATION_CODE, TARGET_ID, DISCORD_ID)
-            VALUES (?, ?, ?, ?)
+            INSERT INTO notification_subscriptions (GUILD_ID, CHANNEL_ID, NOTIFICATION_CODE, TARGET_ID, DISCORD_ID, EXTRA_INFO)
+            VALUES (?, ?, ?, ?, ?, ?)
         """
-        values = (channel_id, notif_code, player_id, discord_id)
+        values = (
+            guild_id,
+            channel_id,
+            Notifications.NEW_VILLAGE,
+            player_id,
+            discord_id,
+            "",
+        )
         execute_sql_with_values(DB, query, values)
 
         embed = discord.Embed(
             title="Subscribe Success",
-            description=f"{discord_id} on {channel_id} subscribed to notification: `{notif_code}`, for player `{player_name}`",
+            description=f"{discord_id} on {channel_id} subscribed to notification: `{Notifications.NEW_VILLAGE}`, for player `{player_name}`",
             color=Colors.SUCCESS,
         )
         await self.message.channel.send(embed=embed)
@@ -116,9 +181,52 @@ class NotificationApp(BaseApp):
     @is_dev_or_user_or_admin_privs
     async def unsubscribe(self):
         notif_code = self.params[0]
-        player_name = self.params[1]
 
-        # TODO: Insert validation around notification codes
+        if notif_code not in Notifications.get_values():
+            embed = discord.Embed(
+                title="Subscribe Failed",
+                description=f"Notification code `{notif_code}` not found",
+                color=Colors.ERROR,
+            )
+            await self.message.channel.send(embed=embed)
+            return
+
+        if notif_code == Notifications.NEW_VILLAGE:
+            await self.handle_new_village_unsubscription()
+        elif notif_code == Notifications.ALLIANCE_QUAD_NEW_VILLAGE:
+            await self.handle_alliance_quad_new_village_unsubscription()
+
+    async def handle_alliance_quad_new_village_unsubscription(self):
+        alliance_name = self.params[1]
+        alliance_id = get_alliance_id_for_alliance(alliance_name)
+        channel_id = self.message.channel.mention
+        discord_id = self.message.author.mention
+
+        DB = self.config[self.guild_id]["database"]
+        query = """
+            DELETE FROM notification_subscriptions
+            WHERE CHANNEL_ID = ?
+            AND NOTIFICATION_CODE = ?
+            AND TARGET_ID = ?
+            AND DISCORD_ID = ?
+        """
+        values = (
+            channel_id,
+            Notifications.ALLIANCE_QUAD_NEW_VILLAGE,
+            alliance_id,
+            discord_id,
+        )
+        execute_sql_with_values(DB, query, values)
+
+        embed = discord.Embed(
+            title="Unsubscribe Success",
+            description=f"{discord_id} on {channel_id} unsubscribed from notification: `{Notifications.ALLIANCE_QUAD_NEW_VILLAGE}`, for alliance `{alliance_name}`, quad `{quad}`",
+            color=Colors.SUCCESS,
+        )
+        await self.message.channel.send(embed=embed)
+
+    async def handle_new_village_unsubscription(self):
+        player_name = self.params[1]
 
         player_id = get_player_id_for_player(player_name)
         if player_id is None:
@@ -141,12 +249,12 @@ class NotificationApp(BaseApp):
             AND TARGET_ID = ?
             AND DISCORD_ID = ?
         """
-        values = (channel_id, notif_code, player_id, discord_id)
+        values = (channel_id, Notifications.NEW_VILLAGE, player_id, discord_id)
         execute_sql_with_values(DB, query, values)
 
         embed = discord.Embed(
             title="Unsubscribe Success",
-            description=f"{discord_id} on {channel_id} unsubscribed from notification: `{notif_code}`, for player `{player_name}`",
+            description=f"{discord_id} on {channel_id} unsubscribed from notification: `{Notifications.NEW_VILLAGE}`, for player `{player_name}`",
             color=Colors.SUCCESS,
         )
         await self.message.channel.send(embed=embed)
@@ -161,6 +269,7 @@ class NotificationApp(BaseApp):
         (new_date, old_date) = self.get_latest_two_dates(game_DB)
         logger.info(f"[NotifTask] Old date: {old_date}, New date: {new_date}")
 
+        notif_embeds = []
         for notif in Notifications.get_values():
             # Skip the actual get_values call
             if notif == Notifications.get_values:
@@ -172,7 +281,6 @@ class NotificationApp(BaseApp):
                 discord_DB, notif
             )
 
-            notif_embeds = []
             for sub in subscriptions:
                 logger.info(f"[NotifTask] Processing subscription: {sub}")
                 notif = self.notif_action_handler(
@@ -211,9 +319,66 @@ class NotificationApp(BaseApp):
     def notif_action_handler(self, notif_code, subscription, old_date, new_date, DB):
         if notif_code == Notifications.NEW_VILLAGE:
             return self.new_village_handler(subscription, old_date, new_date, DB)
+        elif notif_code == Notifications.ALLIANCE_QUAD_NEW_VILLAGE:
+            return self.alliance_quad_new_village_handler(
+                subscription, old_date, new_date, DB
+            )
         else:
             logger.error(f"Unknown notification code: {notif_code}")
             raise Exception(f"Unknown notification code: {notif_code}")
+
+    def alliance_quad_new_village_handler(self, subscription, old_date, new_date, DB):
+        alliance_id = subscription["TARGET_ID"]
+        discord_id = subscription["DISCORD_ID"]
+        channel_id = subscription["CHANNEL_ID"]
+        extra_info = subscription["EXTRA_INFO"]
+        quad = json.loads(extra_info)["quad"]
+
+        logger.info(
+            f"[NotifTask] alliance_id: {alliance_id}, discord_id: {discord_id}, channel_id: {channel_id}, quad: {quad}"
+        )
+
+        # Get all village_ids that have 1 insert_count in v_village_ages
+        query = """
+            SELECT village_id, x_coordinate, y_coordinate
+            FROM v_village_ages
+            WHERE insert_count = 1
+            AND alliance_id = ?
+        """
+        values = (alliance_id,)
+        results = query_sql_with_values(DB, query, values)
+
+        logger.info(f"[NotifTask] Results size: {results.__len__()}")
+        logger.info(f"[NotifTask] Results: {results}")
+
+        x0, x1, y0, y1 = get_quad_limits(quad)
+        logger.info(f"[NotifTask] Quad limits: {x0}, {y0}, {x1}, {y1}")
+
+        final_results = []
+        for result in results:
+            x = result["x_coordinate"]
+            y = result["y_coordinate"]
+            if x >= x0 and x <= x1 and y >= y0 and y <= y1:
+                final_results.append(result)
+
+        logger.info(f"[NotifTask] Final results size: {final_results.__len__()}")
+        logger.info(f"[NotifTask] Final results: {final_results}")
+
+        if final_results.__len__() > 0:
+            logger.info(
+                f"[NotifTask] Sending notification for alliance: {alliance_id}; discord: {discord_id}, channel: {channel_id}, quad: {quad}"
+            )
+            embed = discord.Embed(
+                title="New Village Notification",
+                description=f"Alliance `{alliance_id}` gained the following new villages in the `{quad}` quad",
+                color=Colors.SUCCESS,
+            )
+            embed.add_field(
+                name="Villages",
+                value=final_results,
+                inline=False,
+            )
+            return (embed, subscription)
 
     def new_village_handler(self, subscription, old_date, new_date, DB):
         target_id = subscription["TARGET_ID"]

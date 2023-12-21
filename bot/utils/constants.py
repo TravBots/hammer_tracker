@@ -6,6 +6,7 @@ class Colors:
 
 class Notifications:
     NEW_VILLAGE = "new_village"
+    ALLIANCE_QUAD_NEW_VILLAGE = "alliance_quad_new_village"
 
     @classmethod
     def get_values(cls):

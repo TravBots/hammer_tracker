@@ -189,13 +189,9 @@ class Core(discord.Client):
             None, None, self.config
         ).run_notification_task()
 
-        # @TODO: Remove the need for a default guild id
-        guild_id = int(self.config["default"]["guild_id"])
-        # logger.info(f"Sending notifications for guild {guild_id}")
-        # logger.info(f"Guild Object: {client}")
-        # logger.info(f"Guild Object: {await client.fetch_guild(guild_id)}")
-        guild = await client.fetch_guild(guild_id)
         for embed, subscription in notif_embeds:
+            guild_id = subscription["GUILD_ID"]
+            guild = await client.fetch_guild(guild_id)
             channel_id = subscription["CHANNEL_ID"]
             channel = await guild.fetch_channel(channel_id.strip("<#").strip(">"))
             logger.info(f"Sending notification to channel: {channel}")
