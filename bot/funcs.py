@@ -565,6 +565,19 @@ def get_alliance_id_for_alliance(alliance):
         return None
 
 
+def get_alliance_name_for_alliance(alliance_id):
+    # TODO: Don't hardocde am3.db. Dynamically get db nick.
+    cnx = sqlite3.connect(f"{GAME_SERVERS_DB_PATH}am3.db")
+    query = f"select alliance_tag from x_world where alliance_id = '{alliance_id}'"
+    try:
+        alliance_tag = cnx.execute(query).fetchone()[0]
+        logger.info(f"Allance ID: {alliance_tag} for alliance: {alliance_id}")
+        return alliance_tag
+    except TypeError:
+        logger.error(f"Alliance ID not found for alliance: {alliance_id}")
+        return None
+
+
 def validate_notification_code(notif_code):
     if notif_code in Notifications.__dict__.values():
         return True

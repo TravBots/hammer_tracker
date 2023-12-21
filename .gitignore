@@ -8,3 +8,4 @@ __pycache__/
 .vscode
 map.sql
 logs/
+.DS_Store

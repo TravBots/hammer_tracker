@@ -220,7 +220,7 @@ class NotificationApp(BaseApp):
 
         embed = discord.Embed(
             title="Unsubscribe Success",
-            description=f"{discord_id} on {channel_id} unsubscribed from notification: `{Notifications.ALLIANCE_QUAD_NEW_VILLAGE}`, for alliance `{alliance_name}`, quad `{quad}`",
+            description=f"{discord_id} on {channel_id} unsubscribed from notification: `{Notifications.ALLIANCE_QUAD_NEW_VILLAGE}`, for alliance `{alliance_name}`",
             color=Colors.SUCCESS,
         )
         await self.message.channel.send(embed=embed)
@@ -340,7 +340,7 @@ class NotificationApp(BaseApp):
 
         # Get all village_ids that have 1 insert_count in v_village_ages
         query = """
-            SELECT village_id, x_coordinate, y_coordinate
+            SELECT village_id, village_name, x_coordinate, y_coordinate
             FROM v_village_ages
             WHERE insert_count = 1
             AND alliance_id = ?
@@ -349,7 +349,7 @@ class NotificationApp(BaseApp):
         results = query_sql_with_values(DB, query, values)
 
         logger.info(f"[NotifTask] Results size: {results.__len__()}")
-        logger.info(f"[NotifTask] Results: {results}")
+        # logger.info(f"[NotifTask] Results: {results}")
 
         x0, x1, y0, y1 = get_quad_limits(quad)
         logger.info(f"[NotifTask] Quad limits: {x0}, {y0}, {x1}, {y1}")
@@ -359,10 +359,20 @@ class NotificationApp(BaseApp):
             x = result["x_coordinate"]
             y = result["y_coordinate"]
             if x >= x0 and x <= x1 and y >= y0 and y <= y1:
+                village_link = (
+                    "["
+                    + process_name(result["village_name"])
+                    + "](https://ts3.x1.america.travian.com/position_details.php?x="
+                    + str(result["x_coordinate"])
+                    + "&y="
+                    + str(result["y_coordinate"])
+                    + ")"
+                )
+                result["village_link"] = village_link
                 final_results.append(result)
 
         logger.info(f"[NotifTask] Final results size: {final_results.__len__()}")
-        logger.info(f"[NotifTask] Final results: {final_results}")
+        # logger.info(f"[NotifTask] Final results: {final_results}")
 
         if final_results.__len__() > 0:
             logger.info(
@@ -370,12 +380,19 @@ class NotificationApp(BaseApp):
             )
             embed = discord.Embed(
                 title="New Village Notification",
-                description=f"Alliance `{alliance_id}` gained the following new villages in the `{quad}` quad",
+                description=f"Alliance `{get_alliance_name_for_alliance(alliance_id)}` gained the following new villages in the `{quad}` quad",
                 color=Colors.SUCCESS,
             )
             embed.add_field(
                 name="Villages",
-                value=final_results,
+                value=(
+                    "\n".join(
+                        [
+                            f"{v['village_link']} ({v['x_coordinate']}|{v['y_coordinate']})"
+                            for v in final_results
+                        ]
+                    )
+                ),
                 inline=False,
             )
             return (embed, subscription)
