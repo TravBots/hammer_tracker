@@ -4,36 +4,38 @@ import dash
 import pandas as pd
 import plotly.express as px
 import plotly.graph_objects as go
-from dash import dcc, html
+from dash import dcc, html, callback, Input, Output
+import dash_daq as daq
+
 
 dash.register_page(__name__, path_template="/alliances/<alliance_id>")
 
 
-def layout(alliance_id=None):
+def layout(alliance_id):
+    pop_chart = create_pop_chart(alliance_id)
+    return html.Div(
+        [
+            dcc.Graph(figure=pop_chart, config={"displaylogo": False}),
+            daq.ToggleSwitch(
+                id="capital-toggle",
+                value=False,
+            ),
+            dcc.Graph(id="alliance-villages", config={"displaylogo": False}),
+            dcc.Store(id="alliance-id", data=alliance_id),
+        ]
+    )
+
+
+@callback(
+    Output("alliance-villages", "figure"),
+    Input("alliance-id", "data"),
+    Input("capital-toggle", "value"),
+)
+def create_map(alliance_id, filter_capitals):
     cnx = sqlite3.connect("../databases/game_servers/am3.db")
-    # TODO: Pass alliance_id as a param instead of f-string. This is insecure.
-    query = f"select strftime('%Y-%m-%d', datetime(inserted_at, 'unixepoch', 'localtime')) as date, alliance_id, sum(population) as population from map_history where alliance_id = {alliance_id} group by 1,2 order by 1;"
-    history = pd.read_sql_query(query, cnx)
-    query = f"select alliance_tag, sum(population) as population from x_world where alliance_id = {alliance_id} group by 1"
-    alliance = pd.read_sql_query(query, cnx)
-
-    ref = max(0, len(history) - 8)
-    fig = go.Figure(
-        go.Indicator(
-            mode="number+delta",
-            value=history["population"][len(history) - 1],
-            delta={
-                "reference": history["population"][ref],
-                "valueformat": ".0f",
-            },
-            title={"text": f"{alliance['alliance_tag'][0]} (7 day diff)"},
-            domain={"y": [0, 1], "x": [0.25, 0.75]},
-        )
-    )
-    fig.add_trace(
-        go.Scatter(y=history["population"], x=history["date"], name="Population")
-    )
-
+    print(f"Creating map for alliance {alliance_id}")
+    print(f"Filter capitals: {filter_capitals}")
+    capital_filter = "and capital" if filter_capitals else ""
     query = f"""
     SELECT
         x_coordinate as 'X Coordinate',
@@ -49,6 +51,7 @@ def layout(alliance_id=None):
         population as 'Population',
         capital as 'Capital?'
     FROM x_world where alliance_id = {alliance_id}
+    {capital_filter}
     order by player_name;"""
 
     data = pd.read_sql_query(query, cnx)
@@ -82,9 +85,33 @@ def layout(alliance_id=None):
         fillcolor="#7f7f7f",
         opacity=0.3,
     )
-    return html.Div(
-        [
-            dcc.Graph(figure=fig, config={"displaylogo": False}),
-            dcc.Graph(figure=map, config={"displaylogo": False}),
-        ]
+
+    return map
+
+
+def create_pop_chart(alliance_id):
+    cnx = sqlite3.connect("../databases/game_servers/am3.db")
+    # TODO: Pass alliance_id as a param instead of f-string. This is insecure.
+    query = f"select strftime('%Y-%m-%d', datetime(inserted_at, 'unixepoch', 'localtime')) as date, alliance_id, sum(population) as population from map_history where alliance_id = {alliance_id} group by 1,2 order by 1;"
+    history = pd.read_sql_query(query, cnx)
+    query = f"select alliance_tag, sum(population) as population from x_world where alliance_id = {alliance_id} group by 1"
+    alliance = pd.read_sql_query(query, cnx)
+
+    ref = max(0, len(history) - 8)
+    fig = go.Figure(
+        go.Indicator(
+            mode="number+delta",
+            value=history["population"][len(history) - 1],
+            delta={
+                "reference": history["population"][ref],
+                "valueformat": ".0f",
+            },
+            title={"text": f"{alliance['alliance_tag'][0]} (7 day diff)"},
+            domain={"y": [0, 1], "x": [0.25, 0.75]},
+        )
     )
+    fig.add_trace(
+        go.Scatter(y=history["population"], x=history["date"], name="Population")
+    )
+
+    return fig
