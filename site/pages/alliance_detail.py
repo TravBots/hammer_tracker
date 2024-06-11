@@ -11,7 +11,7 @@ import dash_daq as daq
 dash.register_page(__name__, path_template="/alliances/<alliance_id>")
 
 
-def layout(alliance_id):
+def layout(alliance_id="1"):
     pop_chart = create_pop_chart(alliance_id)
     return html.Div(
         [

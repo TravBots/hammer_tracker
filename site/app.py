@@ -31,6 +31,18 @@ def create_navbar():
             dbc.NavItem(dbc.NavLink(page["name"], href=page["relative_path"]))
             for page in dash.page_registry.values()
             if "detail" not in page["name"]
+        ]
+        + [
+            dcc.Dropdown(
+                id="navbar-dropdown",
+                options=[
+                    {"label": "America 2", "value": "am2"},
+                    {"label": "America 3", "value": "am3"},
+                ],
+                clearable=False,
+                style={"width": "150px", "padding-right": "10px"},
+                value="am2",  # Optionally set a default value
+            )
         ],
         brand="Travstat",
         brand_href="/",

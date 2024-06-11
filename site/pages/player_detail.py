@@ -98,7 +98,7 @@ def pop_table(player_id, cnx):
     return pop_table
 
 
-def layout(player_id=None):
+def layout(player_id=1):
     cnx = sqlite3.connect("../databases/game_servers/am3.db")
     # TODO: Pass player_id as a param instead of f-string. This is insecure.
     query = f"select strftime('%Y-%m-%d', datetime(inserted_at, 'unixepoch', 'localtime')) as date, player_id, sum(population) as population from map_history where player_id = {player_id} group by 1,2 order by 1;"
