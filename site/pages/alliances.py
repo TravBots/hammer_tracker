@@ -2,11 +2,11 @@ import sqlite3
 
 import dash
 import pandas as pd
-from dash import dash_table, html
+from dash import dash_table, html, callback, Input, Output
 
 dash.register_page(__name__)
 
-cnx = sqlite3.connect("../databases/game_servers/am3.db")
+cnx = sqlite3.connect("../databases/game_servers/am2.db")
 
 
 def data_table(cnx: sqlite3.Connection):
@@ -80,11 +80,14 @@ def data_table(cnx: sqlite3.Connection):
 layout = html.Div(
     [
         html.Div(
-            [
-                data_table(cnx),
-            ]
-        ),
-        html.Br(),
-        html.Div(id="analytics-output"),
+            id="alliance-table",
+            children=data_table(cnx),
+        )
     ]
 )
+
+
+@callback(Output("alliance-table", "children"), Input("stored-server", "data"))
+def update_alliance_table(data):
+    cnx = sqlite3.connect(f"../databases/game_servers/{data['server_code']}.db")
+    return data_table(cnx)

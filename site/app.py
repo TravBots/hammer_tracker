@@ -3,7 +3,7 @@ import sqlite3
 import dash
 import dash_bootstrap_components as dbc
 import pandas as pd
-from dash import Dash, dcc, html
+from dash import Dash, dcc, html, Input, Output
 
 app = Dash(
     __name__,
@@ -15,11 +15,15 @@ app.title = "Travstat"
 
 server = app.server
 
-cnx = sqlite3.connect("../databases/game_servers/am3.db")
-updated_at = pd.read_sql_query(
-    "select max(strftime('%Y-%m-%d', datetime(inserted_at, 'unixepoch', 'localtime'))) as updated_at from map_history;",
-    cnx,
-)
+
+def get_last_updated(server):
+    cnx = sqlite3.connect(f"../databases/game_servers/{server}.db")
+    updated_at = pd.read_sql_query(
+        "select max(strftime('%Y-%m-%d', datetime(inserted_at, 'unixepoch', 'localtime'))) as updated_at from map_history;",
+        cnx,
+    )
+    return updated_at["updated_at"].iat[0]
+
 
 from dash import html
 import dash_bootstrap_components as dbc
@@ -28,13 +32,15 @@ import dash_bootstrap_components as dbc
 def create_navbar():
     navbar = dbc.NavbarSimple(
         children=[
-            dbc.NavItem(dbc.NavLink(page["name"], href=page["relative_path"]))
+            dbc.NavItem(
+                dbc.NavLink(page["name"], id=page["name"], href=page["relative_path"])
+            )
             for page in dash.page_registry.values()
             if "detail" not in page["name"]
         ]
         + [
             dcc.Dropdown(
-                id="navbar-dropdown",
+                id="server-dropdown",
                 options=[
                     {"label": "America 2", "value": "am2"},
                     {"label": "America 3", "value": "am3"},
@@ -66,14 +72,29 @@ app.layout = html.Div(
                 ),
                 html.Hr(),
                 html.Footer(
+                    id="footer",
                     children=[
-                        html.P(f"Last updated: {updated_at['updated_at'].iat[0]}"),
-                    ]
+                        html.P(f"Last updated: {get_last_updated('am2')}"),
+                    ],
                 ),
             ]
         ),
+        dcc.Store(id="stored-server"),
     ]
 )
+
+
+@app.callback(Output("stored-server", "data"), Input("server-dropdown", "value"))
+def update_store(value):
+    updated_at = get_last_updated(value)
+    return {"server_code": value, "updated_at": updated_at}
+
+
+@app.callback(Output("footer", "children"), Input("stored-server", "data"))
+def display_value(data):
+    return [
+        html.P(f"Server: {data['server_code']}; Last updated: {data['updated_at']}")
+    ]
 
 
 if __name__ == "__main__":
