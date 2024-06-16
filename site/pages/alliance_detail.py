@@ -11,28 +11,35 @@ import dash_daq as daq
 dash.register_page(__name__, path_template="/alliances/<alliance_id>")
 
 
-def layout(alliance_id):
-    pop_chart = create_pop_chart(alliance_id)
-    return html.Div(
-        [
-            dcc.Graph(figure=pop_chart, config={"displaylogo": False}),
-            daq.ToggleSwitch(
-                id="capital-toggle",
-                value=False,
-            ),
-            dcc.Graph(id="alliance-villages", config={"displaylogo": False}),
-            dcc.Store(id="alliance-id", data=alliance_id),
-        ]
-    )
+def layout(server_id="am2", alliance_id="1"):
+    return html.Div(id="alliance-detail", children=get_children(server_id, alliance_id))
+
+
+def get_children(server_id, alliance_id):
+    return [
+        html.H2(f"Alliance ID: {alliance_id}"),
+        dcc.Graph(
+            id="alliance-pop-chart",
+            figure=create_pop_chart(server_id, alliance_id),
+            config={"displaylogo": False},
+        ),
+        daq.ToggleSwitch(
+            id="capital-toggle",
+            value=False,
+        ),
+        dcc.Graph(id="alliance-villages", config={"displaylogo": False}),
+        dcc.Store(id="alliance-id", data=alliance_id),
+    ]
 
 
 @callback(
     Output("alliance-villages", "figure"),
     Input("alliance-id", "data"),
+    Input("stored-server", "data"),
     Input("capital-toggle", "value"),
 )
-def create_map(alliance_id, filter_capitals):
-    cnx = sqlite3.connect("../databases/game_servers/am3.db")
+def create_map(alliance_id, data, filter_capitals):
+    cnx = sqlite3.connect(f"../databases/game_servers/{data['server_code']}.db")
     print(f"Creating map for alliance {alliance_id}")
     print(f"Filter capitals: {filter_capitals}")
     capital_filter = "and capital" if filter_capitals else ""
@@ -89,13 +96,16 @@ def create_map(alliance_id, filter_capitals):
     return map
 
 
-def create_pop_chart(alliance_id):
-    cnx = sqlite3.connect("../databases/game_servers/am3.db")
+def create_pop_chart(server_id, alliance_id):
+    cnx = sqlite3.connect(f"../databases/game_servers/{server_id}.db")
     # TODO: Pass alliance_id as a param instead of f-string. This is insecure.
     query = f"select strftime('%Y-%m-%d', datetime(inserted_at, 'unixepoch', 'localtime')) as date, alliance_id, sum(population) as population from map_history where alliance_id = {alliance_id} group by 1,2 order by 1;"
     history = pd.read_sql_query(query, cnx)
     query = f"select alliance_tag, sum(population) as population from x_world where alliance_id = {alliance_id} group by 1"
     alliance = pd.read_sql_query(query, cnx)
+
+    if history.empty:
+        return go.Figure()
 
     ref = max(0, len(history) - 8)
     fig = go.Figure(
@@ -115,3 +125,20 @@ def create_pop_chart(alliance_id):
     )
 
     return fig
+
+
+@callback(
+    Output("alliance-pop-chart", "figure"),
+    Input("stored-server", "data"),
+    Input("alliance-detail", "children"),
+)
+def update(data, current_children):
+    alliance_id = 1
+
+    if current_children is not None:
+        alliance_str = current_children[0]["props"]["children"]
+        alliance_id = alliance_str.split(": ")[1]
+
+    print('data["server_code"]:', data["server_code"])
+
+    return create_pop_chart(data["server_code"], alliance_id)

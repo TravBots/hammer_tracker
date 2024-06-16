@@ -7,7 +7,7 @@ from dash import Input, Output, callback, dcc, html
 
 dash.register_page(__name__)
 
-cnx = sqlite3.connect("../databases/game_servers/am3.db")
+cnx = sqlite3.connect("../databases/game_servers/am2.db")
 query = f"""
 select alliance_tag, sum(population) as total_pop from x_world 
 where alliance_tag <> ''
@@ -15,6 +15,7 @@ group by alliance_tag
 order by total_pop desc limit 20
 ;"""
 alliances = data = pd.read_sql_query(query, cnx)
+
 layout = html.Div(
     [
         html.H4("Select the alliances you would like to see below"),
@@ -32,10 +33,14 @@ layout = html.Div(
 )
 
 
-@callback(Output("graph", "figure"), Input("dropdown", "value"))
-def map(alliances):
+@callback(
+    Output("graph", "figure"),
+    Input("dropdown", "value"),
+    Input("stored-server", "data"),
+)
+def map(alliances, data):
     alliances = ", ".join(f"'{alliance}'" for alliance in alliances)
-    cnx = sqlite3.connect("../databases/game_servers/am3.db")
+    cnx = sqlite3.connect(f"../databases/game_servers/{data['server_code']}.db")
     query = f"""
     SELECT
         x_coordinate as 'X Coordinate',
@@ -86,3 +91,35 @@ def map(alliances):
         opacity=0.3,
     )
     return fig
+
+
+@callback(
+    Output("dropdown", "options"),
+    Output("dropdown", "value"),
+    Input("stored-server", "data"),
+)
+def update_dropdown_options_and_value(data):
+    # Connect to the database
+    cnx = sqlite3.connect(f"../databases/game_servers/{data['server_code']}.db")
+
+    # Query to fetch data
+    query = """
+    SELECT alliance_tag, SUM(population) AS total_pop
+    FROM x_world 
+    WHERE alliance_tag <> ''
+    GROUP BY alliance_tag 
+    ORDER BY total_pop DESC
+    LIMIT 20;
+    """
+
+    # Execute the query and load the result into a DataFrame
+    alliances = pd.read_sql_query(query, cnx)
+    cnx.close()  # It's important to close the connection
+
+    # Prepare dropdown options from the query results
+    options = [{"label": tag, "value": tag} for tag in alliances["alliance_tag"]]
+
+    # Set the first 4 alliance tags as the default selected values
+    default_values = alliances["alliance_tag"].head(4).tolist()
+
+    return options, default_values
