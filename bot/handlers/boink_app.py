@@ -102,6 +102,18 @@ class BoinkApp(BaseApp):
 
         await self.message.channel.send(embed=embed)
 
+    def _get_connection_path(self, message) -> str:
+        path = f"{GAME_SERVERS_DB_PATH}"
+
+        game_server = self.config[str(message.guild.id)]["game_server"]
+
+        if game_server == "https://ts3.x1.america.travian.com":
+            path += "am3.db"
+        elif game_server == "https://ts2.x1.america.travian.com":
+            path += "am2.db"
+
+        return path
+
     @is_dev_or_user_or_admin_privs
     async def search(self, params, message):
         guild_id = str(message.guild.id)
@@ -109,8 +121,7 @@ class BoinkApp(BaseApp):
         ign = " ".join(params).lower()
 
         try:
-            # TODO: Don't hardocde am3.db. Dynamically get db nick.
-            cnx = sqlite3.connect(f"{GAME_SERVERS_DB_PATH}am3.db")
+            cnx = sqlite3.connect(self._get_connection_path(message))
 
             # First attempt an exact match
             query = f"select * from x_world where lower(player_name) = '{ign}'"
@@ -136,7 +147,7 @@ class BoinkApp(BaseApp):
             df["village_markdown"] = (
                 "["
                 + df["village_name"]
-                + "](https://ts3.x1.america.travian.com/position_details.php?x="
+                + "](https://ts2.x1.america.travian.com/position_details.php?x="
                 + df["x_coordinate"].astype(str)
                 + "&y="
                 + df["y_coordinate"].astype(str)
@@ -152,7 +163,7 @@ class BoinkApp(BaseApp):
             if not df.empty:
                 link = (
                     f"[View on Travstat](https://www.travstat.com/players/{player_id}) | "
-                    f"[View in-game](https://ts3.x1.america.travian.com/profile/{player_id})"
+                    f"[View in-game](https://ts2.x1.america.travian.com/profile/{player_id})"
                 )
                 embed = discord.Embed(title=player, color=Colors.SUCCESS)
                 embed.description = (

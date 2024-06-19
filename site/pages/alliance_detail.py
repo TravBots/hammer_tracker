@@ -104,7 +104,7 @@ def create_pop_chart(server_id, alliance_id):
     query = f"select alliance_tag, sum(population) as population from x_world where alliance_id = {alliance_id} group by 1"
     alliance = pd.read_sql_query(query, cnx)
 
-    if history.empty:
+    if history.empty or alliance.empty:
         return go.Figure()
 
     ref = max(0, len(history) - 8)
