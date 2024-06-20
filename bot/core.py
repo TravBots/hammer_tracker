@@ -50,7 +50,13 @@ class Core(discord.Client):
 
         if not message.author.bot:
             last_item = message.content.split(" ")[-1].replace("?", "")
-            if coordinates_are_valid(last_item):
+            ignore_24_7 = False
+            try:
+                ignore_24_7 = self.config[str(message.guild.id)]["ignore_24_7"]
+            except:
+                logger.warn("No ignore_24_7 setting found in config.ini")
+
+            if coordinates_are_valid(last_item, ignore_24_7):
                 if not message.author.bot:
                     slash = "/" in last_item
                     pipe = "|" in last_item
