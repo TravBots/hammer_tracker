@@ -1,9 +1,9 @@
 import configparser
 from typing import List
-import discord
 
-from utils.logger import logger
+import discord
 from utils.constants import BOT_SERVERS_DB_PATH
+from utils.logger import logger
 
 
 class BaseApp:

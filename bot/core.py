@@ -1,20 +1,18 @@
+import configparser
+import datetime
+import sqlite3
+from typing import Any
+
 import discord
 from discord import app_commands
 from discord.ext import tasks
-import configparser
-import datetime
-from typing import Any
-from zoneinfo import ZoneInfo
-import sqlite3
-
-from utils.constants import crop_production, BOT_SERVERS_DB_PATH, Colors
-from funcs import (get_channel_from_id, cancel_cfd, insert_defense_thread, create_cfd)
-from utils.validators import (coordinates_are_valid)
-from utils.logger import logger, periodic_log_check
-
 from factory import AppFactory
-
+from funcs import cancel_cfd, create_cfd, get_channel_from_id, insert_defense_thread
 from interactions.cfd import Cfd
+from utils.constants import BOT_SERVERS_DB_PATH, Colors, crop_production
+from utils.logger import logger, periodic_log_check
+from utils.validators import coordinates_are_valid
+from zoneinfo import ZoneInfo
 
 intents = discord.Intents.all()
 intents.message_content = True

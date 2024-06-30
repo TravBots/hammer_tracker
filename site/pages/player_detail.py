@@ -1,12 +1,12 @@
 import sqlite3
+from datetime import datetime, timedelta
 
 import dash
 import dash_bootstrap_components as dbc
 import pandas as pd
 import plotly.express as px
 import plotly.graph_objects as go
-from dash import dcc, html, dash_table, Input, Output, callback
-from datetime import datetime, timedelta
+from dash import Input, Output, callback, dash_table, dcc, html
 
 dash.register_page(__name__, path_template="/players/<player_id>")
 

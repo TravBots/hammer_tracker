@@ -1,11 +1,10 @@
+from mocks import MockMessage
 from utils.validators import (
     coordinates_are_valid,
+    is_dev,
     url_is_valid,
     validate_add_input,
-    is_dev
 )
-
-from mocks import MockMessage
 
 
 def test_coordinates_are_valid():

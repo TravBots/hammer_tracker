@@ -3,9 +3,7 @@ import sqlite3
 import dash
 import dash_bootstrap_components as dbc
 import pandas as pd
-from dash import Dash, dcc, Input, Output
-
-from dash import html
+from dash import Dash, Input, Output, dcc, html
 
 app = Dash(
     __name__,

@@ -1,8 +1,6 @@
-from factory import AppFactory
 from apps import BoinkApp, DefApp, TrackerApp
-
-from mocks import MockMessage, MockMember
-
+from factory import AppFactory
+from mocks import MockMember, MockMessage
 
 MESSAGE_1 = MockMessage(content="!boink keyword some text here")
 MESSAGE_2 = MockMessage(content="!tracker keyword some text here")

@@ -1,6 +1,6 @@
-import discord
 import traceback
 
+import discord
 from utils.constants import Colors
 
 

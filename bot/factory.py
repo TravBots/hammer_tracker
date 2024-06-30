@@ -1,9 +1,7 @@
 import configparser
-
-import discord
-
 from typing import Any, List, Union
 
+import discord
 from apps import Applications
 from utils.logger import logger
 

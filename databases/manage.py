@@ -1,8 +1,9 @@
-import click
 import glob
+import os
 import sqlite3
 from pathlib import Path
-import os
+
+import click
 
 
 def _get_views() -> list:

@@ -1,5 +1,5 @@
-import logging as logger
 import datetime
+import logging as logger
 import os
 from threading import Timer
 

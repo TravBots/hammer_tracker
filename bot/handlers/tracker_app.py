@@ -1,29 +1,22 @@
-from .base_app import BaseApp
-
-from utils.errors import (
-    no_db_error,
-    invalid_input_error,
-    not_unique_error,
-    incorrect_roles_error
-)
-from utils.validators import (
-    validate_unique_url,
-    validate_add_input
-)
-from utils.decorators import (
-    is_dev_or_user_or_admin_privs,
-    is_dev_or_admin_privs
-)
-
-from utils.logger import logger
 from funcs import (
-    give_help, 
-    list_all_names, 
-    add_report, 
-    get_reports, 
-    get_one_report, 
-    delete_report
+    add_report,
+    delete_report,
+    get_one_report,
+    get_reports,
+    give_help,
+    list_all_names,
 )
+from utils.decorators import is_dev_or_admin_privs, is_dev_or_user_or_admin_privs
+from utils.errors import (
+    incorrect_roles_error,
+    invalid_input_error,
+    no_db_error,
+    not_unique_error,
+)
+from utils.logger import logger
+from utils.validators import validate_add_input, validate_unique_url
+
+from .base_app import BaseApp
 
 
 class TrackerApp(BaseApp):
