@@ -18,6 +18,14 @@ format: $(VENV)
 test: $(VENV)
 	@$(BIN)/python -m pytest
 
+pull-prod-dbs: $(VENV)
+	@cd databases && ../$(BIN)/python manage.py copy-prod-db $(username)
+
+setup-game-dbs: $(VENV)
+	@cd databases && ../$(BIN)/python load.py && ../$(BIN)/python manage.py refresh-views
+
+run-site: $(VENV)
+	@cd site && ../$(BIN)/python app.py
 # clean:
 # 	@rm -rf env/ .ruff_cache/ fable.egg-info/ \
 # 	src/fable.egg-info/ src/fable/__pycache__ \

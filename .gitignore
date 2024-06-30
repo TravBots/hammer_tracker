@@ -5,6 +5,7 @@ config.ini
 nohup.out
 __pycache__/
 .pytest*
+.ruff*
 .vscode
 map.sql
 logs/
