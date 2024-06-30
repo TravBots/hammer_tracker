@@ -5,13 +5,12 @@ import configparser
 import datetime
 from typing import Any
 from zoneinfo import ZoneInfo
+import sqlite3
 
-from utils.constants import crop_production, BOT_SERVERS_DB_PATH
-from utils.errors import *
-from funcs import *
-from utils.hero import *
-from utils.validators import *
-from utils.logger import *
+from utils.constants import crop_production, BOT_SERVERS_DB_PATH, Colors
+from funcs import (get_channel_from_id, cancel_cfd, insert_defense_thread, create_cfd)
+from utils.validators import (coordinates_are_valid)
+from utils.logger import logger, periodic_log_check
 
 from factory import AppFactory
 
@@ -53,8 +52,8 @@ class Core(discord.Client):
             ignore_24_7 = False
             try:
                 ignore_24_7 = self.config[str(message.guild.id)]["ignore_24_7"]
-            except:
-                logger.warn("No ignore_24_7 setting found in config.ini")
+            except Exception:
+                logger.warning("No ignore_24_7 setting found in config.ini")
 
             if coordinates_are_valid(last_item, ignore_24_7):
                 if not message.author.bot:

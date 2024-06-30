@@ -2,7 +2,7 @@ import discord
 
 
 def get_hero_items(url):
-    error = 0xB22222
+    error = 0xB22222 # noqa: F841
     success = 0x207325
 
     hero_items_string = url[92:]

@@ -4,13 +4,13 @@ import discord
 import sqlite3
 import pandas as pd
 
-from utils.constants import BOT_SERVERS_DB_PATH, GAME_SERVERS_DB_PATH
-from utils.errors import *
-from utils.validators import *
-from utils.decorators import *
-from utils.printers import *
+from utils.constants import GAME_SERVERS_DB_PATH, Colors
+from utils.errors import (no_db_error, incorrect_roles_error, invalid_input_error)
+# from utils.validators import *
+from utils.decorators import (is_dev_or_user_or_admin_privs, is_dev_or_guild_admin, is_dev_or_admin_privs)
+from utils.printers import (rows_to_piped_strings)
 from utils.logger import logger
-from funcs import *
+from funcs import (process_name, give_info, execute_sql, get_sql_by_path, init)
 
 
 class BoinkApp(BaseApp):
@@ -107,12 +107,21 @@ class BoinkApp(BaseApp):
 
         game_server = self.config[str(message.guild.id)]["game_server"]
 
-        if game_server == "https://ts3.x1.america.travian.com":
-            path += "am3.db"
-        elif game_server == "https://ts2.x1.america.travian.com":
-            path += "am2.db"
+        server_number, speed, domain = game_server.split(".")[0:3]
+        server_number = server_number.split("ts")[1]
 
-        return path
+        domains = {
+            "america": "am",
+            "europe": "euro",
+            "arabics": "arab"
+        }
+        # if game_server == "https://ts3.x1.america.travian.com":
+        #     path += "am3.db"
+        # elif game_server == "https://ts2.x1.america.travian.com":
+        #     path += "am2.db"
+
+        database_name = domains[domain] + server_number
+        return path+database_name
 
     @is_dev_or_user_or_admin_privs
     async def search(self, params, message):

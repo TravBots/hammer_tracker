@@ -3,7 +3,9 @@ import sqlite3
 import dash
 import dash_bootstrap_components as dbc
 import pandas as pd
-from dash import Dash, dcc, html, Input, Output
+from dash import Dash, dcc, Input, Output
+
+from dash import html
 
 app = Dash(
     __name__,
@@ -24,9 +26,6 @@ def get_last_updated(server):
     )
     return updated_at["updated_at"].iat[0]
 
-
-from dash import html
-import dash_bootstrap_components as dbc
 
 
 def create_navbar():
