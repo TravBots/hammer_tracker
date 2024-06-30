@@ -1,4 +1,4 @@
-from table2ascii import table2ascii as t2a, PresetStyle
+# from table2ascii import table2ascii as t2a, PresetStyle
 
 
 def rows_to_piped_strings(df, columns):
@@ -54,6 +54,6 @@ def asterisk_table(df, columns):
 
     return "\n".join(table)
 
-
-def ascii_table(header, body):
-    return t2a(header=header, body=body, first_col_heading=True)
+# TODO: Remove?
+# def ascii_table(header, body):
+#     return t2a(header=header, body=body, first_col_heading=True)
