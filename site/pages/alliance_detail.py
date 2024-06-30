@@ -99,7 +99,19 @@ def create_map(alliance_id, data, filter_capitals):
 def create_pop_chart(server_id, alliance_id):
     cnx = sqlite3.connect(f"../databases/game_servers/{server_id}.db")
     # TODO: Pass alliance_id as a param instead of f-string. This is insecure.
-    query = f"select strftime('%Y-%m-%d', datetime(inserted_at, 'unixepoch', 'localtime')) as date, alliance_id, sum(population) as population from map_history where alliance_id = {alliance_id} group by 1,2 order by 1;"
+    query = f"""
+        select 
+            v_map_history.date, 
+            alliance_id, 
+            sum(population) as population 
+        from v_map_history 
+        join v_server_numbers
+            on v_server_numbers.date = v_map_history.date
+        where v_map_history.alliance_id = {alliance_id} 
+        and v_server_numbers.server_number = (select max(server_number) from v_server_numbers)
+        group by 1,2 
+        order by 1;
+        """
     history = pd.read_sql_query(query, cnx)
     query = f"select alliance_tag, sum(population) as population from x_world where alliance_id = {alliance_id} group by 1"
     alliance = pd.read_sql_query(query, cnx)
