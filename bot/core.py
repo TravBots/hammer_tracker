@@ -13,12 +13,16 @@ from utils.hero import *
 from utils.validators import *
 from utils.logger import *
 
+from handlers.notification_app import NotificationApp
 from factory import AppFactory
+from funcs import time_until_next_occurrence
 
 from interactions.cfd import Cfd
 
 intents = discord.Intents.all()
 intents.message_content = True
+
+global client
 
 
 class Core(discord.Client):
@@ -39,6 +43,7 @@ class Core(discord.Client):
 
     async def setup_hook(self):
         self.close_threads.start()
+        self.check_sql_updates.start()
 
         await self.tree.sync()
 
@@ -176,6 +181,21 @@ class Core(discord.Client):
             except KeyError as e:
                 logger.error(f"Failed to clean up threads for {guild}")
                 logger.error(e)
+
+    @tasks.loop(minutes=1440.0)
+    async def check_sql_updates(self):
+        logger.info("Checking for SQL updates")
+        notif_embeds = await NotificationApp(
+            None, None, self.config
+        ).run_notification_task()
+
+        for embed, subscription in notif_embeds:
+            guild_id = subscription["GUILD_ID"]
+            guild = await client.fetch_guild(guild_id)
+            channel_id = subscription["CHANNEL_ID"]
+            channel = await guild.fetch_channel(channel_id.strip("<#").strip(">"))
+            logger.info(f"Sending notification to channel: {channel}")
+            await channel.send(embed=embed)
 
 
 if __name__ == "__main__":

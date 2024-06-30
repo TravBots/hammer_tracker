@@ -2,7 +2,9 @@ import sqlite3
 import discord
 import configparser
 
-from utils.constants import Colors, BOT_SERVERS_DB_PATH
+from datetime import datetime, timedelta, time
+
+from utils.constants import *
 from utils.logger import logger
 
 
@@ -28,6 +30,34 @@ def init(config, message):
     return embed
 
 
+def query_sql(db_name, sql):
+    conn = sqlite3.connect(db_name)
+    logger.info(f"Running sql:\n{sql}")
+    cursor = conn.execute(sql)
+
+    desc = cursor.description
+    column_names = [col[0] for col in desc]
+    data = [dict(zip(column_names, row)) for row in cursor.fetchall()]
+
+    conn.close()
+
+    return data
+
+
+def query_sql_with_values(db_name, sql, vals):
+    conn = sqlite3.connect(db_name)
+    logger.info(f"Running sql:\n{sql}")
+    cursor = conn.execute(sql, vals)
+
+    desc = cursor.description
+    column_names = [col[0] for col in desc]
+    data = [dict(zip(column_names, row)) for row in cursor.fetchall()]
+
+    conn.close()
+
+    return data
+
+
 def get_sql_by_path(path):
     with open(path, "r") as sql_file:
         sql = sql_file.read()
@@ -39,6 +69,15 @@ def execute_sql(db_name, sql):
     conn = sqlite3.connect(db_name)
     logger.info(f"Running sql:\n{sql}")
     conn.execute(sql)
+    conn.commit()
+    conn.close()
+
+
+def execute_sql_with_values(db_name, sql, values):
+    conn = sqlite3.connect(db_name)
+    logger.info(f"Running sql:\n{sql}")
+    logger.info(f"Values:\n{values}")
+    conn.execute(sql, values)
     conn.commit()
     conn.close()
 
@@ -482,3 +521,76 @@ def process_name(x):
         logger.info(f"logging x: {x}. stripped: {str(x).replace('.', '')}")
         return str(x).replace(".", "")
     return x
+
+
+def time_until_next_occurrence(target_time):
+    # Get the current time
+    now = datetime.now()
+
+    # Create a datetime object for the target time today
+    target_datetime = datetime.combine(now.date(), target_time)
+
+    # Check if the target time is later today or tomorrow
+    if target_datetime < now:
+        # Target time has already passed today, calculate until next day
+        target_datetime += timedelta(days=1)
+
+    # Calculate the time difference
+    return target_datetime - now
+
+
+def get_player_id_for_player(ign):
+    # TODO: Don't hardocde am3.db. Dynamically get db nick.
+    cnx = sqlite3.connect(f"{GAME_SERVERS_DB_PATH}am3.db")
+    query = f"select player_id from x_world where lower(player_name) = '{ign.lower()}'"
+    try:
+        player_id = cnx.execute(query).fetchone()[0]
+        logger.info(f"Player ID: {player_id} for player: {ign}")
+        return player_id
+    except TypeError:
+        logger.error(f"Player ID not found for player: {ign}")
+        return None
+
+
+def get_alliance_id_for_alliance(alliance):
+    # TODO: Don't hardocde am3.db. Dynamically get db nick.
+    cnx = sqlite3.connect(f"{GAME_SERVERS_DB_PATH}am3.db")
+    query = f"select alliance_id from x_world where lower(alliance_tag) = '{alliance.lower()}'"
+    try:
+        alliance_id = cnx.execute(query).fetchone()[0]
+        logger.info(f"Allance ID: {alliance_id} for alliance: {alliance}")
+        return alliance_id
+    except TypeError:
+        logger.error(f"Alliance ID not found for alliance: {alliance}")
+        return None
+
+
+def get_alliance_name_for_alliance(alliance_id):
+    # TODO: Don't hardocde am3.db. Dynamically get db nick.
+    cnx = sqlite3.connect(f"{GAME_SERVERS_DB_PATH}am3.db")
+    query = f"select alliance_tag from x_world where alliance_id = '{alliance_id}'"
+    try:
+        alliance_tag = cnx.execute(query).fetchone()[0]
+        logger.info(f"Allance ID: {alliance_tag} for alliance: {alliance_id}")
+        return alliance_tag
+    except TypeError:
+        logger.error(f"Alliance ID not found for alliance: {alliance_id}")
+        return None
+
+
+def validate_notification_code(notif_code):
+    if notif_code in Notifications.__dict__.values():
+        return True
+    else:
+        return False
+
+
+def get_quad_limits(quad):
+    if quad == "NE":
+        return 0, 200, 0, 200
+    elif quad == "NW":
+        return -200, 0, 0, 200
+    elif quad == "SE":
+        return 0, 200, -200, 0
+    elif quad == "SW":
+        return -200, 0, -200, 0

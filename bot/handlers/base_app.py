@@ -14,10 +14,14 @@ class BaseApp:
         config: configparser.ConfigParser,
     ):
         self.message = message
-        self.guild_id = str(self.message.guild.id)
-        self.db_path = f"{BOT_SERVERS_DB_PATH}{self.guild_id}.db"
-        self.keyword = params[0]
-        self.params = params[1:]
+        self.guild_id = str(self.message.guild.id) if self.message is not None else None
+        self.db_path = (
+            f"{BOT_SERVERS_DB_PATH}{self.guild_id}.db"
+            if self.message is not None
+            else None
+        )
+        self.keyword = params[0] if params is not None else None
+        self.params = params[1:] if params is not None else None
         self.config = config
         self.config.read("config.ini")
 

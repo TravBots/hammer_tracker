@@ -3,3 +3,8 @@ Steps to run the site
 1. Run python3 load.py in the database directory
 2. Run python3 manage.py --refresh-views in the database directory
 1. Run python3 app.py in the site directory
+
+Manage Commands
+
+python3 manage.py refresh-views
+python3 manage.py copy-prod-db {USERNAME}
