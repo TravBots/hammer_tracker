@@ -1,4 +1,1 @@
 DROP VIEW IF EXISTS test_view;
-
-CREATE VIEW test_view AS
-SELECT * FROM MAP_HISTORY;
