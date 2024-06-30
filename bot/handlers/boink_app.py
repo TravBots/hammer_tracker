@@ -117,7 +117,7 @@ class BoinkApp(BaseApp):
 
         domains = {
             "america": "am",
-            "europe": "euro",
+            "europe": "eu",
             "arabics": "arab"
         }
         # if game_server == "https://ts3.x1.america.travian.com":
@@ -125,7 +125,8 @@ class BoinkApp(BaseApp):
         # elif game_server == "https://ts2.x1.america.travian.com":
         #     path += "am2.db"
 
-        database_name = domains[domain] + server_number
+        database_name = f"{domains[domain]}{server_number}.db"
+        logger.debug(f"database_name: {database_name}")
         return path+database_name
 
     @is_dev_or_user_or_admin_privs

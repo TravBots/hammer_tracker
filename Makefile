@@ -26,6 +26,10 @@ setup-game-dbs: $(VENV)
 
 run-site: $(VENV)
 	@cd site && ../$(BIN)/python app.py
+
+run-bot: $(VENV)
+	@cd bot && ../$(BIN)/python core.py
+
 # clean:
 # 	@rm -rf env/ .ruff_cache/ fable.egg-info/ \
 # 	src/fable.egg-info/ src/fable/__pycache__ \
