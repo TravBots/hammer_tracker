@@ -26,7 +26,7 @@ class BaseApp:
             self.user_role = self.config[self.guild_id]["user_role"]
             self.anvil_role = self.config[self.guild_id]["anvil_role"]
         except KeyError:
-            logger.warn("Required role not set")
+            logger.warning("Required role not set")
 
     async def run(self):
         raise NotImplementedError
