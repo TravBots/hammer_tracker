@@ -2,7 +2,7 @@ import sqlite3
 
 import dash
 import pandas as pd
-from dash import dash_table, html, callback, Input, Output
+from dash import Input, Output, callback, dash_table, html
 
 dash.register_page(__name__)
 
@@ -11,7 +11,7 @@ cnx = sqlite3.connect("../databases/game_servers/am2.db")
 
 def data_table(cnx: sqlite3.Connection):
     df = pd.read_sql_query(
-        f"""select 
+        """select 
             '['||alliance_tag||']('||'alliances/'||alliance_id||')' as alliance_tag, 
             sum(population) as population, 
             count(distinct player_id) as player_count, 

@@ -1,21 +1,18 @@
+import configparser
+import datetime
+import sqlite3
+from typing import Any
+
 import discord
 from discord import app_commands
 from discord.ext import tasks
-import configparser
-import datetime
-from typing import Any
-from zoneinfo import ZoneInfo
-
-from utils.constants import crop_production, BOT_SERVERS_DB_PATH
-from utils.errors import *
-from funcs import *
-from utils.hero import *
-from utils.validators import *
-from utils.logger import *
-
 from factory import AppFactory
-
+from funcs import cancel_cfd, create_cfd, get_channel_from_id, insert_defense_thread
 from interactions.cfd import Cfd
+from utils.constants import BOT_SERVERS_DB_PATH, Colors, crop_production
+from utils.logger import logger, periodic_log_check
+from utils.validators import coordinates_are_valid
+from zoneinfo import ZoneInfo
 
 intents = discord.Intents.all()
 intents.message_content = True
@@ -50,7 +47,13 @@ class Core(discord.Client):
 
         if not message.author.bot:
             last_item = message.content.split(" ")[-1].replace("?", "")
-            if coordinates_are_valid(last_item):
+            ignore_24_7 = False
+            try:
+                ignore_24_7 = self.config[str(message.guild.id)]["ignore_24_7"]
+            except Exception:
+                logger.warning("No ignore_24_7 setting found in config.ini")
+
+            if coordinates_are_valid(last_item, ignore_24_7):
                 if not message.author.bot:
                     slash = "/" in last_item
                     pipe = "|" in last_item

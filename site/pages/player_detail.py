@@ -1,12 +1,12 @@
 import sqlite3
+from datetime import datetime, timedelta
 
 import dash
 import dash_bootstrap_components as dbc
 import pandas as pd
 import plotly.express as px
 import plotly.graph_objects as go
-from dash import dcc, html, dash_table, Input, Output, callback
-from datetime import datetime, timedelta
+from dash import Input, Output, callback, dash_table, dcc, html
 
 dash.register_page(__name__, path_template="/players/<player_id>")
 
@@ -93,6 +93,7 @@ def pop_table(player_id, cnx):
             for c in ["village_name", "founded"]
         ],
         markdown_options={"link_target": "_self", "html": True},
+        id="pop-table",
     )
 
     return pop_table
@@ -244,9 +245,9 @@ def generate_markdown(first, second):
 
 
 @callback(
-    Output("table", "children"),
+    Output("pop-table", "children"),
     Input("stored-server", "data"),
-    Input("table", "children"),
+    Input("pop-table", "children"),
 )
 def update(data, current_children):
     player_id = 1

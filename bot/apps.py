@@ -1,6 +1,6 @@
 from handlers.boink_app import BoinkApp
-from handlers.tracker_app import TrackerApp
 from handlers.def_app import DefApp
+from handlers.tracker_app import TrackerApp
 
 
 class Applications:

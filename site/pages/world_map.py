@@ -8,7 +8,7 @@ from dash import Input, Output, callback, dcc, html
 dash.register_page(__name__)
 
 cnx = sqlite3.connect("../databases/game_servers/am2.db")
-query = f"""
+query = """
 select alliance_tag, sum(population) as total_pop from x_world 
 where alliance_tag <> ''
 group by alliance_tag 

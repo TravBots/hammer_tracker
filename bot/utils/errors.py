@@ -1,5 +1,4 @@
 import discord
-
 from utils.constants import Colors
 
 

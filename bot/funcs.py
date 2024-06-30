@@ -1,8 +1,7 @@
 import sqlite3
-import discord
-import configparser
 
-from utils.constants import Colors, BOT_SERVERS_DB_PATH
+import discord
+from utils.constants import BOT_SERVERS_DB_PATH, Colors
 from utils.logger import logger
 
 

@@ -2,7 +2,7 @@ import sqlite3
 
 import dash
 import pandas as pd
-from dash import dash_table, html, callback, Input, Output
+from dash import Input, Output, callback, dash_table, html
 
 dash.register_page(__name__)
 

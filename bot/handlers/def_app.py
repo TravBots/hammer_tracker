@@ -1,11 +1,13 @@
-from .base_app import BaseApp
+import sqlite3
 
-from utils.errors import *
-from utils.validators import *
-from utils.decorators import *
-from utils.printers import *
+import discord
+from funcs import get_leaderboard, list_open_cfds, send_defense
+from utils.constants import Colors
+from utils.decorators import is_dev_or_anvil_or_admin_privs
+from utils.errors import incorrect_roles_error, invalid_input_error
 from utils.logger import logger
-from funcs import *
+
+from .base_app import BaseApp
 
 
 class DefApp(BaseApp):

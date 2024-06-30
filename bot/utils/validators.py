@@ -1,10 +1,9 @@
-import discord
 import re
 import sqlite3
-
 from typing import List
 
-from utils.constants import dev_ids, MAP_MAX, MAP_MIN
+import discord
+from utils.constants import MAP_MAX, MAP_MIN, dev_ids
 from utils.logger import logger
 
 
@@ -16,7 +15,7 @@ def roles_are_valid(message, guild_id, config) -> bool:
     return admin_role in author_roles or user_role in author_roles
 
 
-def coordinates_are_valid(coordinates: str) -> bool:
+def coordinates_are_valid(coordinates: str, ignore_24_7: bool = False) -> bool:
     slash = "/" in coordinates
     pipe = "|" in coordinates
 
@@ -34,6 +33,8 @@ def coordinates_are_valid(coordinates: str) -> bool:
         x = int(xy[0])
         y = int(xy[1])
         if x > MAP_MAX or y > MAP_MAX or x < MAP_MIN or y < MAP_MIN:
+            return False
+        if ignore_24_7 and x == 24 and y == 7:
             return False
         return True
     except ValueError:

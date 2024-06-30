@@ -1,9 +1,8 @@
 #!/projects/hammer_tracker/dash_site/env/bin/python3
-import requests
 import sqlite3
 
+import requests
 from servers import SERVER_LINKS
-
 
 with open("sql/replace_x_world.sql", "r") as sql_file:
     replace_x_world = sql_file.read()

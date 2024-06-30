@@ -1,16 +1,21 @@
-from .base_app import BaseApp
-import discord
-
 import sqlite3
-import pandas as pd
 
-from utils.constants import BOT_SERVERS_DB_PATH, GAME_SERVERS_DB_PATH
-from utils.errors import *
-from utils.validators import *
-from utils.decorators import *
-from utils.printers import *
+import discord
+import pandas as pd
+from funcs import execute_sql, get_sql_by_path, give_info, init, process_name
+from utils.constants import GAME_SERVERS_DB_PATH, Colors
+
+# from utils.validators import *
+from utils.decorators import (
+    is_dev_or_admin_privs,
+    is_dev_or_guild_admin,
+    is_dev_or_user_or_admin_privs,
+)
+from utils.errors import incorrect_roles_error, invalid_input_error, no_db_error
 from utils.logger import logger
-from funcs import *
+from utils.printers import rows_to_piped_strings
+
+from .base_app import BaseApp
 
 
 class BoinkApp(BaseApp):
@@ -102,6 +107,28 @@ class BoinkApp(BaseApp):
 
         await self.message.channel.send(embed=embed)
 
+    def _get_connection_path(self, message) -> str:
+        path = f"{GAME_SERVERS_DB_PATH}"
+
+        game_server = self.config[str(message.guild.id)]["game_server"]
+
+        server_number, speed, domain = game_server.split(".")[0:3]
+        server_number = server_number.split("ts")[1]
+
+        domains = {
+            "america": "am",
+            "europe": "eu",
+            "arabics": "arab"
+        }
+        # if game_server == "https://ts3.x1.america.travian.com":
+        #     path += "am3.db"
+        # elif game_server == "https://ts2.x1.america.travian.com":
+        #     path += "am2.db"
+
+        database_name = f"{domains[domain]}{server_number}.db"
+        logger.debug(f"database_name: {database_name}")
+        return path+database_name
+
     @is_dev_or_user_or_admin_privs
     async def search(self, params, message):
         guild_id = str(message.guild.id)
@@ -109,8 +136,7 @@ class BoinkApp(BaseApp):
         ign = " ".join(params).lower()
 
         try:
-            # TODO: Don't hardocde am3.db. Dynamically get db nick.
-            cnx = sqlite3.connect(f"{GAME_SERVERS_DB_PATH}am3.db")
+            cnx = sqlite3.connect(self._get_connection_path(message))
 
             # First attempt an exact match
             query = f"select * from x_world where lower(player_name) = '{ign}'"
@@ -136,7 +162,7 @@ class BoinkApp(BaseApp):
             df["village_markdown"] = (
                 "["
                 + df["village_name"]
-                + "](https://ts3.x1.america.travian.com/position_details.php?x="
+                + "](https://ts2.x1.america.travian.com/position_details.php?x="
                 + df["x_coordinate"].astype(str)
                 + "&y="
                 + df["y_coordinate"].astype(str)
@@ -152,7 +178,7 @@ class BoinkApp(BaseApp):
             if not df.empty:
                 link = (
                     f"[View on Travstat](https://www.travstat.com/players/{player_id}) | "
-                    f"[View in-game](https://ts3.x1.america.travian.com/profile/{player_id})"
+                    f"[View in-game](https://ts2.x1.america.travian.com/profile/{player_id})"
                 )
                 embed = discord.Embed(title=player, color=Colors.SUCCESS)
                 embed.description = (
