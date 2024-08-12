@@ -3,7 +3,7 @@ import sqlite3
 import discord
 import pandas as pd
 from funcs import execute_sql, get_sql_by_path, give_info, init, process_name, get_connection_path
-from utils.constants import GAME_SERVERS_DB_PATH, Colors
+from utils.constants import Colors
 
 # from utils.validators import *
 from utils.decorators import (
