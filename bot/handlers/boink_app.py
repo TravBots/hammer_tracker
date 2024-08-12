@@ -2,7 +2,7 @@ import sqlite3
 
 import discord
 import pandas as pd
-from funcs import execute_sql, get_sql_by_path, give_info, init, process_name
+from funcs import execute_sql, get_sql_by_path, give_info, init, process_name, get_connection_path
 from utils.constants import GAME_SERVERS_DB_PATH, Colors
 
 # from utils.validators import *
@@ -32,6 +32,8 @@ class BoinkApp(BaseApp):
                 await self._set_config_value(self.params)
             elif self.keyword == "search":
                 await self.search(self.params, self.message)
+            elif self.keyword == "alerts":
+                await self.alerts(self.params, self.message)
             else:
                 logger.error(
                     f"{self.keyword} is not a valid command for {self.__class__.__name__}"
@@ -107,28 +109,6 @@ class BoinkApp(BaseApp):
 
         await self.message.channel.send(embed=embed)
 
-    def _get_connection_path(self, message) -> str:
-        path = f"{GAME_SERVERS_DB_PATH}"
-
-        game_server = self.config[str(message.guild.id)]["game_server"]
-
-        server_number, speed, domain = game_server.split(".")[0:3]
-        server_number = server_number.split("ts")[1]
-
-        domains = {
-            "america": "am",
-            "europe": "eu",
-            "arabics": "arab"
-        }
-        # if game_server == "https://ts3.x1.america.travian.com":
-        #     path += "am3.db"
-        # elif game_server == "https://ts2.x1.america.travian.com":
-        #     path += "am2.db"
-
-        database_name = f"{domains[domain]}{server_number}.db"
-        logger.debug(f"database_name: {database_name}")
-        return path+database_name
-
     @is_dev_or_user_or_admin_privs
     async def search(self, params, message):
         guild_id = str(message.guild.id)
@@ -136,7 +116,7 @@ class BoinkApp(BaseApp):
         ign = " ".join(params).lower()
 
         try:
-            cnx = sqlite3.connect(self._get_connection_path(message))
+            cnx = sqlite3.connect(get_connection_path(self.config[guild_id]))
 
             # First attempt an exact match
             query = f"select * from x_world where lower(player_name) = '{ign}'"
@@ -198,4 +178,19 @@ class BoinkApp(BaseApp):
             embed.add_field(
                 name="Error", value="No results found for " + ign + " in the map"
             )
+            await message.channel.send(embed=embed)
+
+    @is_dev_or_user_or_admin_privs
+    async def alerts(self, params, message):
+        guild_id = str(message.guild.id)
+        self.DB = self.config[guild_id]["database"]
+        action = params[0]
+        logger.info(f"Action: {action}")
+
+        if action == "enable":
+            with open("config.ini", "w") as conf:
+                self.config[self.guild_id]["alerts"] = "1"
+                self.config.write(conf)
+            embed = discord.Embed(color=Colors.SUCCESS)
+            embed.add_field(name="Success", value="Alerts enabled")
             await message.channel.send(embed=embed)
