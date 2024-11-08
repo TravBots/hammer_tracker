@@ -142,7 +142,7 @@ class BoinkApp(BaseApp):
             df["village_markdown"] = (
                 "["
                 + df["village_name"]
-                + "](https://ts2.x1.america.travian.com/position_details.php?x="
+                + "](https://ts2.x1.europe.travian.com/position_details.php?x="
                 + df["x_coordinate"].astype(str)
                 + "&y="
                 + df["y_coordinate"].astype(str)
@@ -158,7 +158,7 @@ class BoinkApp(BaseApp):
             if not df.empty:
                 link = (
                     f"[View on Travstat](https://www.travstat.com/players/{player_id}) | "
-                    f"[View in-game](https://ts2.x1.america.travian.com/profile/{player_id})"
+                    f"[View in-game](https://ts2.x1.europe.travian.com/profile/{player_id})"
                 )
                 embed = discord.Embed(title=player, color=Colors.SUCCESS)
                 embed.description = (
