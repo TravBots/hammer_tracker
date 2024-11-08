@@ -1,8 +1,7 @@
 import sqlite3
-import discord
-import configparser
 
-from utils.constants import Colors, BOT_SERVERS_DB_PATH
+import discord
+from utils.constants import BOT_SERVERS_DB_PATH, GAME_SERVERS_DB_PATH, Colors
 from utils.logger import logger
 
 
@@ -260,10 +259,10 @@ def create_cfd(
         created_by_id,
         event_id,
         created_by_name,
-        land_time, 
-        x_coordinate, 
-        y_coordinate, 
-        amount_requested, 
+        land_time,
+        x_coordinate,
+        y_coordinate,
+        amount_requested,
         created_at
         ) VALUES (?,?,?,?,?,?,?,CURRENT_TIMESTAMP) RETURNING *;
     """
@@ -318,12 +317,12 @@ def list_open_cfds(db_name, game_server):
     conn = sqlite3.connect(db_name)
     query = conn.execute(
         """
-        select 
-            dc.id, 
-            datetime(dc.land_time, 'localtime'), 
-            dc.x_coordinate, 
-            dc.y_coordinate, 
-            dc.amount_requested, 
+        select
+            dc.id,
+            datetime(dc.land_time, 'localtime'),
+            dc.x_coordinate,
+            dc.y_coordinate,
+            dc.amount_requested,
             dc.amount_submitted,
             dt.jump_url
         from defense_calls dc
@@ -385,7 +384,7 @@ def send_defense(db_name, cfd_id: int, amount_sent: int, message: discord.Messag
     conn = sqlite3.connect(db_name)
     query = """
         UPDATE DEFENSE_CALLS
-        SET amount_submitted = amount_submitted + ? 
+        SET amount_submitted = amount_submitted + ?
         WHERE id = ? returning amount_requested, amount_submitted;
         """
     logger.info(f"Executing query: {query}")
@@ -450,7 +449,7 @@ def get_leaderboard(db_name):
             sum(amount_submitted)
         from SUBMITTED_DEFENSE
         group by 1
-        order by 2 desc 
+        order by 2 desc
         limit 10;
         """
     logger.info(f"Executing query: {query}")
@@ -482,3 +481,35 @@ def process_name(x):
         logger.info(f"logging x: {x}. stripped: {str(x).replace('.', '')}")
         return str(x).replace(".", "")
     return x
+
+def get_connection_path(config) -> str:
+    path = f"{GAME_SERVERS_DB_PATH}"
+
+    game_server = config["game_server"]
+
+    server_number, speed, domain = game_server.split(".")[0:3]
+    server_number = server_number.split("ts")[1]
+
+    domains = {
+        "america": "am",
+        "europe": "eu",
+        "arabics": "arab"
+    }
+    # if game_server == "https://ts3.x1.america.travian.com":
+    #     path += "am3.db"
+    # elif game_server == "https://ts2.x1.america.travian.com":
+    #     path += "am2.db"
+
+    database_name = f"{domains[domain]}{server_number}.db"
+    logger.debug(f"database_name: {database_name}")
+    return path+database_name
+
+
+def get_alliance_tag_from_id(conn, alliance_id):
+    query = "select alliance_name from v_alliance_lookup where alliance_id = ?"
+    logger.info(f"Executing query: {query}")
+    result = conn.execute(query, (alliance_id,)).fetchone()
+    if result:
+        return result[0]
+    return None
+

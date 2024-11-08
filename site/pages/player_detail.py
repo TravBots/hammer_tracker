@@ -5,7 +5,7 @@ import dash_bootstrap_components as dbc
 import pandas as pd
 import plotly.express as px
 import plotly.graph_objects as go
-from dash import dcc, html, dash_table
+from dash import dcc, html, dash_table, Input, Output, callback
 from datetime import datetime, timedelta
 
 dash.register_page(__name__, path_template="/players/<player_id>")
@@ -93,14 +93,18 @@ def pop_table(player_id, cnx):
             for c in ["village_name", "founded"]
         ],
         markdown_options={"link_target": "_self", "html": True},
+        id="pop-table",
     )
 
     return pop_table
 
 
-def layout(player_id=None):
-    cnx = sqlite3.connect("../databases/game_servers/am3.db")
-    # TODO: Pass player_id as a param instead of f-string. This is insecure.
+def layout(server_id="am2", player_id=1):
+    return html.Div(id="table", children=get_children(server_id, player_id))
+
+
+def get_children(server_id, player_id):
+    cnx = sqlite3.connect(f"../databases/game_servers/{server_id}.db")
     query = f"select strftime('%Y-%m-%d', datetime(inserted_at, 'unixepoch', 'localtime')) as date, player_id, sum(population) as population from map_history where player_id = {player_id} group by 1,2 order by 1;"
     history = pd.read_sql_query(query, cnx)
     query = f"select player_name, sum(population) as population from x_world where player_id = {player_id} group by 1"
@@ -172,21 +176,12 @@ def layout(player_id=None):
         opacity=0.3,
     )
 
-    return html.Div(
-        [
-            dbc.Container(
-                [
-                    dbc.Row(
-                        [
-                            dbc.Col(pop_table(player_id, cnx)),
-                        ]
-                    ),
-                    dbc.Col(dcc.Graph(figure=fig, config={"displaylogo": False})),
-                    dcc.Graph(figure=map, config={"displaylogo": False}),
-                ]
-            ),
-        ],
-    )
+    return [
+        html.H2(f"Player ID: {player_id} - {player['player_name'][0]}"),
+        pop_table(player_id, cnx),
+        dbc.Col(dcc.Graph(figure=fig, config={"displaylogo": False})),
+        dcc.Graph(figure=map, config={"displaylogo": False}),
+    ]
 
 
 def add_pop_diff_markdown(df):
@@ -247,3 +242,19 @@ def generate_markdown(first, second):
     else:
         markdown = f"({pop_diff})"
     return markdown
+
+
+@callback(
+    Output("pop-table", "children"),
+    Input("stored-server", "data"),
+    Input("pop-table", "children"),
+)
+def update(data, current_children):
+    player_id = 1
+
+    if current_children is not None:
+        player_str = current_children[0]["props"]["children"]
+        player_id = int(player_str.split(":")[1].split("-")[0].strip())
+
+    return get_children(data["server_code"], player_id)
+
