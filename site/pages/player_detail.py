@@ -245,7 +245,6 @@ def generate_markdown(first, second):
 
 
 @callback(
-<<<<<<< HEAD
     Output("pop-table", "children"),
     Input("stored-server", "data"),
     Input("pop-table", "children"),
