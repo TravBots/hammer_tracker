@@ -245,9 +245,14 @@ def generate_markdown(first, second):
 
 
 @callback(
+<<<<<<< HEAD
     Output("pop-table", "children"),
     Input("stored-server", "data"),
     Input("pop-table", "children"),
+
+    # Output("table", "children"),
+    # Input("stored-server", "data"),
+    # Input("table", "children"),
 )
 def update(data, current_children):
     player_id = 1
@@ -257,4 +262,7 @@ def update(data, current_children):
         player_id = int(player_str.split(":")[1].split("-")[0].strip())
 
     return get_children(data["server_code"], player_id)
+<<<<<<< HEAD
 
+=======
+>>>>>>> master
