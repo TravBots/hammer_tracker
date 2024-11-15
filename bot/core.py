@@ -3,11 +3,19 @@ import datetime
 import sqlite3
 from typing import Any
 
+import string
 import discord
 from discord import app_commands
 from discord.ext import tasks
-from factory import AppFactory
-from funcs import cancel_cfd, create_cfd, get_alliance_tag_from_id, get_channel_from_id, get_connection_path, insert_defense_thread
+from factory import get_app
+from funcs import (
+    cancel_cfd,
+    create_cfd,
+    get_alliance_tag_from_id,
+    get_channel_from_id,
+    get_connection_path,
+    insert_defense_thread,
+)
 from interactions.cfd import Cfd
 from utils.constants import BOT_SERVERS_DB_PATH, Colors, crop_production
 from utils.logger import logger, periodic_log_check
@@ -28,11 +36,9 @@ class Core(discord.Client):
         super().__init__(intents=intents, **options)
         self.tree = app_commands.CommandTree(self)
         self.config: configparser.ConfigParser = configparser.ConfigParser()
-        self.config.read("config.ini")
+        self._reload_config()
 
-        self.token = self.config["default"]["token"]
-
-        self.factory = AppFactory()
+        self.token = self.read_config_str("default", "token", "")
 
     async def setup_hook(self):
         self.close_threads.start()
@@ -40,22 +46,17 @@ class Core(discord.Client):
 
         await self.tree.sync()
 
-
     async def on_message(self, message: discord.Message):
         # Does mixing async with sync code like this mess anything up?
-        app = self.factory.return_app(message)
+        app = get_app(message, self)
         if app is not None:
             await app.run()
 
         if not message.author.bot:
             last_item = message.content.split(" ")[-1].replace("?", "")
-            ignore_24_7 = False
-            try:
-                ignore_24_7 = self.config[str(message.guild.id)]["ignore_24_7"]
-            except Exception:
-                logger.warning("No ignore_24_7 setting found in config.ini")
+            ignore_24_7 = self.read_config_bool(message.guild.id, "ignore_24_7", False)
 
-            if coordinates_are_valid(last_item, bool(ignore_24_7)):
+            if coordinates_are_valid(last_item, ignore_24_7):
                 if not message.author.bot:
                     slash = "/" in last_item
                     pipe = "|" in last_item
@@ -66,7 +67,9 @@ class Core(discord.Client):
                         xy = last_item.split("|")
                     x = xy[0].strip()
                     y = xy[1].strip()
-                    game_server = self.config[str(message.guild.id)]["game_server"]
+                    game_server = self.read_config_str(
+                        message.guild.id, "game_server", ""
+                    )
                     embed = discord.Embed(color=Colors.SUCCESS)
                     embed.add_field(
                         name="",
@@ -76,10 +79,10 @@ class Core(discord.Client):
 
     async def on_scheduled_event_create(self, event: discord.ScheduledEvent):
         # Refresh config
-        self.config.read("config.ini")
+        self._reload_config()
         guild_id = str(event.guild.id)
-        defense_channel = self.config[guild_id]["defense_channel"]
-        game_server = self.config[guild_id]["game_server"]
+        defense_channel = self.read_config_str(guild_id, "defense_channel", "")
+        game_server = self.read_config_str(guild_id, "game_server", "")
 
         x, y = event.location.replace("/", "|").split("|")
 
@@ -122,8 +125,7 @@ class Core(discord.Client):
         )
 
     async def on_scheduled_event_delete(self, event):
-        # Refresh config
-        self.config.read("config.ini")
+        self._reload_config()
         guild_id = str(event.guild.id)
         cancel_cfd(f"{BOT_SERVERS_DB_PATH}{guild_id}.db", event.id)
 
@@ -144,10 +146,14 @@ class Core(discord.Client):
         # If cfd land_time is in the past, archive the thread
         for guild in client.guilds:
             try:
-                if self.config[str(guild.id)]["clean_up_threads"].lower() == "true":
-                    channel = get_channel_from_id(
-                        guild, self.config[str(guild.id)]["defense_channel"]
+                clean_up_threads = self.read_config_bool(
+                    guild.id, "clean_up_threads", False
+                )
+                if clean_up_threads:
+                    defense_channel = self.read_config_str(
+                        guild.id, "defense_channel", ""
                     )
+                    channel = get_channel_from_id(guild, defense_channel)
 
                     if len(channel.threads) == 0:
                         continue
@@ -182,17 +188,19 @@ class Core(discord.Client):
                 logger.error(f"Failed to clean up threads for {guild}")
                 logger.error(e)
 
-
     async def _send_alerts_for_guild(self, guild):
         logger.info(f"Sending alerts for {str(guild.id)}")
         # Get all players that changed alliances from v_player_change
-        conn = sqlite3.connect(get_connection_path(self.config[str(guild.id)]))
+        game_server = self.read_config_str(guild.id, "game_server", "")
+        conn = sqlite3.connect(get_connection_path(game_server))
         query = "select * from v_player_change where alliance_changed=1"
         rows = conn.execute(query)
         for row in rows:
             # If a channel exists in the guild that matches the player_name in the result, send an alert
-            channel_name = row[1].replace(' ', '-').lower()
-            channel_name = channel_name.translate(str.maketrans('', '', string.punctuation))
+            channel_name = row[1].replace(" ", "-").lower()
+            channel_name = channel_name.translate(
+                str.maketrans("", "", string.punctuation)
+            )
             logger.info(f"Checking for channel {channel_name}")
             channel = discord.utils.get(guild.text_channels, name=channel_name)
             if channel is not None:
@@ -200,14 +208,12 @@ class Core(discord.Client):
 
                 if row[4] == 0:
                     # Send a message that the player has deleted
-                    await channel.send(
-                        f"Player {row[1]} has deleted their account."
-                    )
+                    await channel.send(f"Player {row[1]} has deleted their account.")
                 else:
                     # Check if a player has changed tags
                     await channel.send(
-                        f"Player {row[1]} has changed alliances from " +
-                        f"**{get_alliance_tag_from_id(conn, row[3])}** to **{get_alliance_tag_from_id(conn, row[2])}**"
+                        f"Player {row[1]} has changed alliances from "
+                        + f"**{get_alliance_tag_from_id(conn, row[3])}** to **{get_alliance_tag_from_id(conn, row[2])}**"
                     )
 
     @tasks.loop(hours=24)
@@ -218,13 +224,42 @@ class Core(discord.Client):
         for guild in client.guilds:
             try:
                 logger.info(f"Config for {guild}: {self.config[str(guild.id)]}")
-                if self.config[str(guild.id)]["alerts"] == '1':
+                if self.read_config_str(guild.id, "alerts", "0") == "1":
                     await self._send_alerts_for_guild(guild)
             except KeyError as e:
                 logger.error(f"Failed to check alerts for {guild}")
                 logger.error(e)
 
-    def reload_config(self):
+    def read_config_bool(self, guild_id: int, key: str, default_val: bool) -> bool:
+        try:
+            return_val = self.config[str(guild_id)][key]
+            return bool(return_val)
+        except KeyError:
+            logger.error(f"Key {key} not found in config for guild {guild_id}")
+            return default_val
+
+    def read_config_str(self, guild_id: int, key: str, default_val: str) -> str:
+        try:
+            return self.config[str(guild_id)][key]
+        except KeyError:
+            logger.error(f"Key {key} not found in config for guild {guild_id}")
+            return default_val
+
+    def update_config(self, guild_id: Any, key: str, value: str) -> bool:
+        guild_id = str(guild_id)
+        logger.info(f"Updating config for {guild_id} with {key} = {value}")
+        try:
+            with open("config.ini", "w") as conf:
+                self.config[guild_id][key] = value
+                self.config.write(conf)
+                self._reload_config()
+        except Exception as e:
+            logger.error(f"Error in _set_config_value: {str(e)}")
+            logger.error(f"Guild ID: {guild_id}")
+            logger.error(f"Setting name: {key}")
+            logger.error(f"Setting value: {value}")
+
+    def _reload_config(self):
         """Reload the configuration file"""
         self.config.read("config.ini")
         logger.info("Configuration reloaded")
@@ -344,4 +379,3 @@ if __name__ == "__main__":
         await interaction.response.send_modal(Cfd())
 
     client.run(client.token)
-

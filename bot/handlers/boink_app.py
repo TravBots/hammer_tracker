@@ -2,7 +2,14 @@ import sqlite3
 
 import discord
 import pandas as pd
-from funcs import execute_sql, get_sql_by_path, give_info, init, process_name, get_connection_path
+from funcs import (
+    execute_sql,
+    get_sql_by_path,
+    give_info,
+    init,
+    process_name,
+    get_connection_path,
+)
 from utils.constants import GAME_SERVERS_DB_PATH, Colors
 
 # from utils.validators import *
@@ -19,8 +26,8 @@ from .base_app import BaseApp
 
 
 class BoinkApp(BaseApp):
-    def __init__(self, message, params, config):
-        super().__init__(message, params, config)
+    def __init__(self, message, params, core):
+        super().__init__(message, params, core)
 
     async def run(self):
         try:
@@ -48,9 +55,8 @@ class BoinkApp(BaseApp):
     async def _init(self):
         logger.info("Initializing database...")
 
-        response = init(self.config, self.message)
-        self.config.read("config.ini")
-        DB = self.config[self.guild_id]["database"]
+        response = init(self.core, self.message)
+        DB = self.core.read_config_str(self.guild_id, "database", "")
 
         create_hammers = get_sql_by_path("sql/create_table_hammers.sql")
         create_defense_calls = get_sql_by_path("sql/create_table_defense_calls.sql")
@@ -75,7 +81,7 @@ class BoinkApp(BaseApp):
         # Maybe offload it to the util function to get.
         # Change to user_is_app_admin and user_is_app_user?
         try:
-            response = give_info(self.config, self.guild_id)
+            response = give_info(self.core.config, self.guild_id)
         except KeyError:
             response = no_db_error()
 
@@ -84,27 +90,16 @@ class BoinkApp(BaseApp):
     @is_dev_or_guild_admin
     async def _set_config_value(self, params):
         setting_name = params[0]
-        logger.info(f"setting_name: {setting_name}")
         setting_value = " ".join(params[1:])
-        try:
-            with open("config.ini", "w") as conf:
-                self.config[self.guild_id][setting_name] = setting_value
-                self.config.write(conf)
-            
-            # Get reference to Core client instance through the guild
-            if hasattr(self.message.guild, 'client'):
-                client = self.message.guild.client
-                client.reload_config()
-            
+
+        updated = self.core.update_config(self.guild_id, setting_name, setting_value)
+
+        if updated:
             embed = discord.Embed(color=Colors.SUCCESS)
             embed.add_field(
                 name="Success", value=f"Set {setting_name} as {setting_value}"
             )
-        except Exception as e:
-            logger.error(f"Error in _set_config_value: {str(e)}")
-            logger.error(f"Guild ID: {self.guild_id}")
-            logger.error(f"Setting name: {setting_name}")
-            logger.error(f"Setting value: {setting_value}")
+        else:
             embed = discord.Embed(color=Colors.ERROR)
             embed.add_field(
                 name="Error",
@@ -115,12 +110,12 @@ class BoinkApp(BaseApp):
 
     @is_dev_or_user_or_admin_privs
     async def search(self, params, message):
-        guild_id = str(message.guild.id)
-        self.DB = self.config[guild_id]["database"]
+        self.DB = self.core.read_config_str(self.guild_id, "database", "")
         ign = " ".join(params).lower()
 
         try:
-            cnx = sqlite3.connect(get_connection_path(self.config[guild_id]))
+            game_server = self.core.read_config_str(self.guild_id, "game_server", "")
+            cnx = sqlite3.connect(get_connection_path(game_server))
 
             # First attempt an exact match
             query = f"select * from x_world where lower(player_name) = '{ign}'"
@@ -186,16 +181,12 @@ class BoinkApp(BaseApp):
 
     @is_dev_or_user_or_admin_privs
     async def alerts(self, params, message):
-        guild_id = str(message.guild.id)
-        self.DB = self.config[guild_id]["database"]
         action = params[0]
         logger.info(f"Action: {action}")
 
         if action == "enable":
-            with open("config.ini", "w") as conf:
-                self.config[self.guild_id]["alerts"] = "1"
-                self.config.write(conf)
-            embed = discord.Embed(color=Colors.SUCCESS)
-            embed.add_field(name="Success", value="Alerts enabled")
-            await message.channel.send(embed=embed)
-
+            updated = self.core.update_config(self.guild_id, "alerts", "1")
+            if updated:
+                embed = discord.Embed(color=Colors.SUCCESS)
+                embed.add_field(name="Success", value="Alerts enabled")
+                await message.channel.send(embed=embed)
