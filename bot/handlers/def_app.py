@@ -9,8 +9,8 @@ from funcs import *
 
 
 class DefApp(BaseApp):
-    def __init__(self, message, params, config):
-        super().__init__(message, params, config)
+    def __init__(self, message, params, core):
+        super().__init__(message, params, core)
 
     async def run(self):
         try:
@@ -34,12 +34,9 @@ class DefApp(BaseApp):
 
     @is_dev_or_anvil_or_admin_privs
     async def list(self, message):
-        guild_id = str(message.guild.id)
-        self.DB = self.config[guild_id]["database"]
-
-        game_server = self.config[self.guild_id]["game_server"]
+        self.DB = self.core.read_config_str(self.guild_id, "database", "")
+        game_server = self.core.read_config_str(self.guild_id, "game_server", "")
         response = list_open_cfds(self.DB, game_server)
-
         await message.channel.send(embed=response)
 
     @is_dev_or_anvil_or_admin_privs
@@ -58,11 +55,8 @@ class DefApp(BaseApp):
 
     @is_dev_or_anvil_or_admin_privs
     async def leaderboard(self, message):
-        guild_id = str(message.guild.id)
-        self.DB = self.config[guild_id]["database"]
-
+        self.DB = self.core.read_config_str(self.guild_id, "database", "")
         response = get_leaderboard(self.db_path)
-
         await message.channel.send(embed=response)
 
     @is_dev_or_anvil_or_admin_privs

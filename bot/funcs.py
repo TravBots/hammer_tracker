@@ -5,21 +5,21 @@ from utils.constants import BOT_SERVERS_DB_PATH, GAME_SERVERS_DB_PATH, Colors
 from utils.logger import logger
 
 
-def init(config, message):
+def init(core, message):
     guild_name = str(message.guild.name)
     guild_id = str(message.guild.id)
     message_author = str(message.author)
 
-    if not config.has_section(guild_id):
-        config.add_section(guild_id)
-        config[guild_id]["init_user"] = message_author
+    if not core.config.has_section(guild_id):
+        core.config.add_section(guild_id)
+        core.config[guild_id]["init_user"] = message_author
 
     # `database` and `server` should be able to be updated. `init_user` above should not.
-    config[guild_id]["database"] = f"{BOT_SERVERS_DB_PATH}{guild_id}.db"
-    config[guild_id]["server"] = guild_name
+    core.config[guild_id]["database"] = f"{BOT_SERVERS_DB_PATH}{guild_id}.db"
+    core.config[guild_id]["server"] = guild_name
 
     with open("config.ini", "w") as conf:
-        config.write(conf)
+        core.config.write(conf)
 
     embed = discord.Embed(color=Colors.SUCCESS)
     embed.add_field(name="Success", value="Database initialized")
@@ -482,19 +482,14 @@ def process_name(x):
         return str(x).replace(".", "")
     return x
 
-def get_connection_path(config) -> str:
-    path = f"{GAME_SERVERS_DB_PATH}"
 
-    game_server = config["game_server"]
+def get_connection_path(game_server: str) -> str:
+    path = f"{GAME_SERVERS_DB_PATH}"
 
     server_number, speed, domain = game_server.split(".")[0:3]
     server_number = server_number.split("ts")[1]
 
-    domains = {
-        "america": "am",
-        "europe": "eu",
-        "arabics": "arab"
-    }
+    domains = {"america": "am", "europe": "eu", "arabics": "arab"}
     # if game_server == "https://ts3.x1.america.travian.com":
     #     path += "am3.db"
     # elif game_server == "https://ts2.x1.america.travian.com":
@@ -502,7 +497,7 @@ def get_connection_path(config) -> str:
 
     database_name = f"{domains[domain]}{server_number}.db"
     logger.debug(f"database_name: {database_name}")
-    return path+database_name
+    return path + database_name
 
 
 def get_alliance_tag_from_id(conn, alliance_id):
@@ -512,4 +507,3 @@ def get_alliance_tag_from_id(conn, alliance_id):
     if result:
         return result[0]
     return None
-
