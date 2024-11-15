@@ -93,6 +93,7 @@ def pop_table(player_id, cnx):
             for c in ["village_name", "founded"]
         ],
         markdown_options={"link_target": "_self", "html": True},
+        id="pop-table",
     )
 
     return pop_table
@@ -244,9 +245,13 @@ def generate_markdown(first, second):
 
 
 @callback(
-    Output("table", "children"),
+    Output("pop-table", "children"),
     Input("stored-server", "data"),
-    Input("table", "children"),
+    Input("pop-table", "children"),
+
+    # Output("table", "children"),
+    # Input("stored-server", "data"),
+    # Input("table", "children"),
 )
 def update(data, current_children):
     player_id = 1

@@ -1,21 +1,18 @@
+import configparser
+import datetime
+import sqlite3
+from typing import Any
+
 import discord
 from discord import app_commands
 from discord.ext import tasks
-import configparser
-import datetime
-from typing import Any
-from zoneinfo import ZoneInfo
-
-from utils.constants import crop_production, BOT_SERVERS_DB_PATH
-from utils.errors import *
-from funcs import *
-from utils.hero import *
-from utils.validators import *
-from utils.logger import *
-
 from factory import AppFactory
-
+from funcs import cancel_cfd, create_cfd, get_alliance_tag_from_id, get_channel_from_id, get_connection_path, insert_defense_thread
 from interactions.cfd import Cfd
+from utils.constants import BOT_SERVERS_DB_PATH, Colors, crop_production
+from utils.logger import logger, periodic_log_check
+from utils.validators import coordinates_are_valid
+from zoneinfo import ZoneInfo
 
 intents = discord.Intents.all()
 intents.message_content = True
@@ -39,8 +36,10 @@ class Core(discord.Client):
 
     async def setup_hook(self):
         self.close_threads.start()
+        self.run_server_database_alerts.start()
 
         await self.tree.sync()
+
 
     async def on_message(self, message: discord.Message):
         # Does mixing async with sync code like this mess anything up?
@@ -50,7 +49,13 @@ class Core(discord.Client):
 
         if not message.author.bot:
             last_item = message.content.split(" ")[-1].replace("?", "")
-            if coordinates_are_valid(last_item):
+            ignore_24_7 = False
+            try:
+                ignore_24_7 = self.config[str(message.guild.id)]["ignore_24_7"]
+            except Exception:
+                logger.warning("No ignore_24_7 setting found in config.ini")
+
+            if coordinates_are_valid(last_item, bool(ignore_24_7)):
                 if not message.author.bot:
                     slash = "/" in last_item
                     pipe = "|" in last_item
@@ -151,11 +156,11 @@ class Core(discord.Client):
                     conn = sqlite3.connect(f"{BOT_SERVERS_DB_PATH}{guild.id}.db")
                     for thread in channel.threads:
                         query = """
-                        select 
-                            dc.land_time 
-                        from defense_threads dt 
-                        join defense_calls dc 
-                            on dt.defense_call_id = dc.id 
+                        select
+                            dc.land_time
+                        from defense_threads dt
+                        join defense_calls dc
+                            on dt.defense_call_id = dc.id
                         where dt.id = ?;"""
                         # fmt: off
                         data = (str(thread.id),)
@@ -175,6 +180,48 @@ class Core(discord.Client):
                             await thread.edit(archived=True)
             except KeyError as e:
                 logger.error(f"Failed to clean up threads for {guild}")
+                logger.error(e)
+
+
+    async def _send_alerts_for_guild(self, guild):
+        logger.info(f"Sending alerts for {str(guild.id)}")
+        # Get all players that changed alliances from v_player_change
+        conn = sqlite3.connect(get_connection_path(self.config[str(guild.id)]))
+        query = "select * from v_player_change where alliance_changed=1"
+        rows = conn.execute(query)
+        for row in rows:
+            # If a channel exists in the guild that matches the player_name in the result, send an alert
+            channel_name = row[1].replace(' ', '-').lower()
+            channel_name = channel_name.translate(str.maketrans('', '', string.punctuation))
+            logger.info(f"Checking for channel {channel_name}")
+            channel = discord.utils.get(guild.text_channels, name=channel_name)
+            if channel is not None:
+                logger.info(f"Found channel {channel}")
+
+                if row[4] == 0:
+                    # Send a message that the player has deleted
+                    await channel.send(
+                        f"Player {row[1]} has deleted their account."
+                    )
+                else:
+                    # Check if a player has changed tags
+                    await channel.send(
+                        f"Player {row[1]} has changed alliances from " +
+                        f"**{get_alliance_tag_from_id(conn, row[3])}** to **{get_alliance_tag_from_id(conn, row[2])}**"
+                    )
+
+    @tasks.loop(hours=24)
+    async def run_server_database_alerts(self):
+        await self.wait_until_ready()
+        logger.info("Running server database alerts")
+
+        for guild in client.guilds:
+            try:
+                logger.info(f"Config for {guild}: {self.config[str(guild.id)]}")
+                if self.config[str(guild.id)]["alerts"] == '1':
+                    await self._send_alerts_for_guild(guild)
+            except KeyError as e:
+                logger.error(f"Failed to check alerts for {guild}")
                 logger.error(e)
 
 
@@ -292,3 +339,4 @@ if __name__ == "__main__":
         await interaction.response.send_modal(Cfd())
 
     client.run(client.token)
+

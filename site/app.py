@@ -44,6 +44,7 @@ def create_navbar():
                 options=[
                     {"label": "America 2", "value": "am2"},
                     {"label": "America 3", "value": "am3"},
+                    {"label": "Europe 2", "value": "eu2"},
                 ],
                 clearable=False,
                 style={"width": "150px", "padding-right": "10px"},
