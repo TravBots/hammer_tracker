@@ -83,11 +83,6 @@ class BoinkApp(BaseApp):
 
     @is_dev_or_guild_admin
     async def _set_config_value(self, params):
-        # Params might be: admin bot user
-        # and we want `admin` as the setting_name
-        # and `bot user` as the setting value
-        # NOTE: This does limit setting_name to one word
-
         setting_name = params[0]
         logger.info(f"setting_name: {setting_name}")
         setting_value = " ".join(params[1:])
@@ -95,12 +90,21 @@ class BoinkApp(BaseApp):
             with open("config.ini", "w") as conf:
                 self.config[self.guild_id][setting_name] = setting_value
                 self.config.write(conf)
+            
+            # Get reference to Core client instance through the guild
+            if hasattr(self.message.guild, 'client'):
+                client = self.message.guild.client
+                client.reload_config()
+            
             embed = discord.Embed(color=Colors.SUCCESS)
             embed.add_field(
                 name="Success", value=f"Set {setting_name} as {setting_value}"
             )
         except Exception as e:
-            logger.error(e)
+            logger.error(f"Error in _set_config_value: {str(e)}")
+            logger.error(f"Guild ID: {self.guild_id}")
+            logger.error(f"Setting name: {setting_name}")
+            logger.error(f"Setting value: {setting_value}")
             embed = discord.Embed(color=Colors.ERROR)
             embed.add_field(
                 name="Error",

@@ -224,6 +224,11 @@ class Core(discord.Client):
                 logger.error(f"Failed to check alerts for {guild}")
                 logger.error(e)
 
+    def reload_config(self):
+        """Reload the configuration file"""
+        self.config.read("config.ini")
+        logger.info("Configuration reloaded")
+
 
 if __name__ == "__main__":
     # Init logging first
