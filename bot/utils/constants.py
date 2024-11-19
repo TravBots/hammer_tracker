@@ -11,6 +11,7 @@ BOT_SERVERS_DB_PATH = "../databases/bot_servers/"
 GAME_SERVERS_DB_PATH = "../databases/game_servers/"
 
 dev_ids = [322602660555653151, 177473204011401216]
+pytest_id = 1234
 
 crop_production = {
     10: 280,

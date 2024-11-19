@@ -223,17 +223,6 @@ def give_help():
     return embed
 
 
-def give_info(config, guild_id):
-    embed = discord.Embed(description="Information", color=Colors.SUCCESS)
-    embed.add_field(name="Server Name:", value=config[guild_id]["server"])
-    embed.add_field(name="Game Server", value=config[guild_id]["game_server"])
-    embed.add_field(name="Database Name:", value=config[guild_id]["database"])
-    embed.add_field(name="Tracker Admin", value=config[guild_id]["admin_role"])
-    embed.add_field(name="Tracker User", value=config[guild_id]["user_role"])
-
-    return embed
-
-
 def get_channel_from_id(guild: discord.Guild, channel_id: str):
     return guild.get_channel(int(channel_id))
 
