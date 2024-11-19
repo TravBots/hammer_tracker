@@ -1,5 +1,5 @@
 import sqlite3
-
+import traceback
 import discord
 import pandas as pd
 from funcs import (
@@ -189,7 +189,9 @@ class BoinkApp(BaseApp):
             else:
                 raise Exception("No results found")
         except Exception as e:
-            logger.warn(f"Sending failure message due to exception {e}")
+            logger.warn(
+                f"Sending failure message due to exception {e}\n{traceback.format_exc()}"
+            )
             embed = discord.Embed(color=Colors.ERROR)
             embed.add_field(
                 name="Error", value="No results found for " + ign + " in the map"

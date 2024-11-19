@@ -258,6 +258,8 @@ class Core(discord.Client):
             logger.error(f"Guild ID: {guild_id}")
             logger.error(f"Setting name: {key}")
             logger.error(f"Setting value: {value}")
+            return False
+        return True
 
     def _reload_config(self):
         """Reload the configuration file"""
