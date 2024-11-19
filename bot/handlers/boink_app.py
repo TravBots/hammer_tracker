@@ -5,7 +5,6 @@ import pandas as pd
 from funcs import (
     execute_sql,
     get_sql_by_path,
-    give_info,
     init,
     process_name,
     get_connection_path,
@@ -81,11 +80,30 @@ class BoinkApp(BaseApp):
         # Maybe offload it to the util function to get.
         # Change to user_is_app_admin and user_is_app_user?
         try:
-            response = give_info(self.core.config, self.guild_id)
-        except KeyError:
-            response = no_db_error()
 
-        await self.message.channel.send(embed=response)
+        embed = discord.Embed(description="Information", color=Colors.SUCCESS)
+        embed.add_field(
+            name="Server Name:",
+            value=self.core.read_config_str(self.guild_id, "server", ""),
+        )
+        embed.add_field(
+            name="Game Server",
+            value=self.core.read_config_str(self.guild_id, "game_server", ""),
+        )
+        embed.add_field(
+            name="Database Name:",
+            value=self.core.read_config_str(self.guild_id, "database", ""),
+        )
+        embed.add_field(
+            name="Tracker Admin",
+            value=self.core.read_config_str(self.guild_id, "admin_role", ""),
+        )
+        embed.add_field(
+            name="Tracker User",
+            value=self.core.read_config_str(self.guild_id, "user_role", ""),
+        )
+
+        await self.message.channel.send(embed=embed)
 
     @is_dev_or_guild_admin
     async def _set_config_value(self, params):
