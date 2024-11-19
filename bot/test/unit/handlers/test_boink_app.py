@@ -115,31 +115,33 @@ class TestBoinkApp:
         sent_embed = mock_message.channel.send.call_args[1]["embed"]
         assert sent_embed.color.value == Colors.SUCCESS
 
-    # @pytest.mark.asyncio
-    # async def test_invalid_command(self, mock_message, mock_core):
-    #     # Arrange
-    #     mock_message.content = "!boink invalid_command"
-    #     app = BoinkApp(mock_message, ["invalid_command"], mock_core)
+    @pytest.mark.asyncio
+    async def test_invalid_command(self, mock_message, mock_core):
+        # Arrange
+        mock_message.content = "!boink invalid_command"
+        mock_message.channel.send = AsyncMock()
+        mock_message.author.id = pytest_id
 
-    #     # Act
-    #     await app.run()
+        # Act
+        await mock_core.on_message(mock_message)
 
-    #     # Assert
-    #     mock_message.channel.send.assert_called_once()
-    #     sent_embed = mock_message.channel.send.call_args[1]["embed"]
-    #     assert sent_embed.color == Colors.ERROR
+        # Assert
+        mock_message.channel.send.assert_called_once()
+        sent_embed = mock_message.channel.send.call_args[1]["embed"]
+        assert sent_embed.color.value == Colors.ERROR
 
-    # @pytest.mark.asyncio
-    # async def test_permission_error(self, mock_message, mock_core):
-    #     # Arrange
-    #     mock_message.content = "!boink set admin_role Admin"
-    #     mock_core.read_config_str.side_effect = KeyError()
-    #     app = BoinkApp(mock_message, ["set", "admin_role", "Admin"], mock_core)
+    @pytest.mark.asyncio
+    async def test_permission_error(self, mock_message, mock_core):
+        # Arrange
+        mock_message.content = "!boink set admin_role Admin"
+        mock_message.channel.send = AsyncMock()
+        mock_message.author.id = str(pytest_id) + "z"
+        mock_message.author.guild_permissions.administrator = False
 
-    #     # Act
-    #     await app.run()
+        # Act
+        await mock_core.on_message(mock_message)
 
-    #     # Assert
-    #     mock_message.channel.send.assert_called_once()
-    #     sent_embed = mock_message.channel.send.call_args[1]["embed"]
-    #     assert sent_embed.color == Colors.ERROR
+        # Assert
+        mock_message.channel.send.assert_called_once()
+        sent_embed = mock_message.channel.send.call_args[1]["embed"]
+        assert sent_embed.color.value == Colors.ERROR
