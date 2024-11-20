@@ -12,7 +12,7 @@ case "$1" in
             "$PROJECT_ROOT/.venv/bin/python" -m pytest "$PROJECT_ROOT/bot/test" -v --log-cli-level=INFO
         else
             # Run specific test file
-            "$PROJECT_ROOT/.venv/bin/python" -m pytest "$PROJECT_ROOT/bot/test/unit/handlers/$2.py" -v --log-cli-level=INFO
+            "$PROJECT_ROOT/.venv/bin/python" -m pytest "$PROJECT_ROOT/bot/test/$2.py" -v --log-cli-level=INFO
         fi
         ;;
     "dev")

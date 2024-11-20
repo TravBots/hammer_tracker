@@ -8,14 +8,6 @@ from utils.constants import dev_ids, pytest_id, MAP_MAX, MAP_MIN
 from utils.logger import logger
 
 
-def roles_are_valid(message, guild_id, config) -> bool:
-    admin_role = config[guild_id]["admin_role"].lower()
-    user_role = config[guild_id]["user_role"].lower()
-    author_roles = [a.name.lower() for a in message.author.roles]
-
-    return admin_role in author_roles or user_role in author_roles
-
-
 def coordinates_are_valid(coordinates: str, ignore_24_7: bool = False) -> bool:
     slash = "/" in coordinates
     pipe = "|" in coordinates
@@ -43,9 +35,7 @@ def coordinates_are_valid(coordinates: str, ignore_24_7: bool = False) -> bool:
 
 
 def url_is_valid(url: str):
-    pattern = (
-        "http[s]?://(?:[a-zA-Z]|[0-9]|[$-_@.&+]|[!*\(\),]|(?:%[0-9a-fA-F][0-9a-fA-F]))+"
-    )
+    pattern = "http[s]?://(?:[a-zA-Z]|[0-9]|[$-_@.&+]|[!*\\(\\),]|(?:%[0-9a-fA-F][0-9a-fA-F]))+"
 
     url_is_valid = bool(re.search(pattern, url))
 

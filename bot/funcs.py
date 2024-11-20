@@ -12,11 +12,11 @@ def init(core, message):
 
     if not core.config.has_section(guild_id):
         core.config.add_section(guild_id)
-        core.config[guild_id]["init_user"] = message_author
+        core.update_config(guild_id, "init_user", message_author)
 
     # `database` and `server` should be able to be updated. `init_user` above should not.
-    core.config[guild_id]["database"] = f"{BOT_SERVERS_DB_PATH}{guild_id}.db"
-    core.config[guild_id]["server"] = guild_name
+    core.update_config(guild_id, "database", f"{BOT_SERVERS_DB_PATH}{guild_id}.db")
+    core.update_config(guild_id, "server", guild_name)
 
     with open("config.ini", "w") as conf:
         core.config.write(conf)

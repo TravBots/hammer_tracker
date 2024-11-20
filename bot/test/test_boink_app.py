@@ -1,7 +1,6 @@
 import pytest
 from unittest.mock import AsyncMock, MagicMock
 from unittest.mock import patch
-from core import Core
 from utils.constants import Colors, pytest_id
 
 MOCK_GAME_SERVER = "https://ts2.x1.america.travian.com"
