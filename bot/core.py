@@ -21,7 +21,7 @@ from utils.logger import logger, periodic_log_check
 from utils.validators import coordinates_are_valid
 from zoneinfo import ZoneInfo
 from utils.config_manager import read_config_str, read_config_bool
-from commands.general import GeneralCommands
+from commands.general import scout, cfd
 
 intents = discord.Intents.all()
 intents.message_content = True
@@ -39,9 +39,9 @@ class Core(discord.Client):
         self.token = read_config_str(ConfigKeys.DEFAULT, ConfigKeys.TOKEN, "")
 
     async def setup_hook(self):
-        # Add the commands
-        general_commands = GeneralCommands()
-        self.tree.add_command(general_commands)
+        # Add the commands directly
+        self.tree.add_command(scout)
+        self.tree.add_command(cfd)
 
         # Start tasks
         self.close_threads.start()
