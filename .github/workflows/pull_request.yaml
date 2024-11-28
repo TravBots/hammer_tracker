@@ -8,5 +8,5 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v4
       - name: Run tests
-        working-directory: ./bots
+        working-directory: bots
         run: make test
