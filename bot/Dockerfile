@@ -7,12 +7,12 @@ ADD . /bot
 # Uncomment this line if you are running locally
 # RUN rm /bot/config.ini
 
-ADD setup.sh /bot
-
 WORKDIR /bot
 
-RUN chmod +x setup.sh
-RUN ./setup.sh $DISCORD_BOT_TOKEN
+# Install make
+RUN apt-get update && apt-get install -y make
+
+RUN make setup DISCORD_BOT_TOKEN=$DISCORD_BOT_TOKEN
 RUN pip3 install -r requirements.txt
 
 # Create a directory for the database and set permissions
