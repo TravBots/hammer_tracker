@@ -1,25 +1,27 @@
 import sqlite3
 
 import discord
-from utils.constants import BOT_SERVERS_DB_PATH, GAME_SERVERS_DB_PATH, Colors
+from utils.constants import (
+    BOT_SERVERS_DB_PATH,
+    GAME_SERVERS_DB_PATH,
+    Colors,
+    ConfigKeys,
+)
 from utils.logger import logger
+from utils.config_manager import read_config_str, update_config
 
 
-def init(config, message):
+def init(message):
     guild_name = str(message.guild.name)
     guild_id = str(message.guild.id)
     message_author = str(message.author)
 
-    if not config.has_section(guild_id):
-        config.add_section(guild_id)
-        config[guild_id]["init_user"] = message_author
+    if not read_config_str(guild_id, ConfigKeys.INIT_USER, ""):
+        update_config(guild_id, ConfigKeys.INIT_USER, message_author)
 
     # `database` and `server` should be able to be updated. `init_user` above should not.
-    config[guild_id]["database"] = f"{BOT_SERVERS_DB_PATH}{guild_id}.db"
-    config[guild_id]["server"] = guild_name
-
-    with open("config.ini", "w") as conf:
-        config.write(conf)
+    update_config(guild_id, ConfigKeys.DATABASE, f"{BOT_SERVERS_DB_PATH}{guild_id}.db")
+    update_config(guild_id, ConfigKeys.SERVER, guild_name)
 
     embed = discord.Embed(color=Colors.SUCCESS)
     embed.add_field(name="Success", value="Database initialized")
@@ -219,17 +221,6 @@ def give_help():
     embed.add_field(
         name="Set Tracker User [Tracker Admin]", value="`!tracker set user <ROLE NAME>`"
     )
-
-    return embed
-
-
-def give_info(config, guild_id):
-    embed = discord.Embed(description="Information", color=Colors.SUCCESS)
-    embed.add_field(name="Server Name:", value=config[guild_id]["server"])
-    embed.add_field(name="Game Server", value=config[guild_id]["game_server"])
-    embed.add_field(name="Database Name:", value=config[guild_id]["database"])
-    embed.add_field(name="Tracker Admin", value=config[guild_id]["admin_role"])
-    embed.add_field(name="Tracker User", value=config[guild_id]["user_role"])
 
     return embed
 
@@ -482,19 +473,14 @@ def process_name(x):
         return str(x).replace(".", "")
     return x
 
-def get_connection_path(config) -> str:
-    path = f"{GAME_SERVERS_DB_PATH}"
 
-    game_server = config["game_server"]
+def get_connection_path(game_server: str) -> str:
+    path = f"{GAME_SERVERS_DB_PATH}"
 
     server_number, speed, domain = game_server.split(".")[0:3]
     server_number = server_number.split("ts")[1]
 
-    domains = {
-        "america": "am",
-        "europe": "eu",
-        "arabics": "arab"
-    }
+    domains = {"america": "am", "europe": "eu", "arabics": "arab"}
     # if game_server == "https://ts3.x1.america.travian.com":
     #     path += "am3.db"
     # elif game_server == "https://ts2.x1.america.travian.com":
@@ -502,7 +488,7 @@ def get_connection_path(config) -> str:
 
     database_name = f"{domains[domain]}{server_number}.db"
     logger.debug(f"database_name: {database_name}")
-    return path+database_name
+    return path + database_name
 
 
 def get_alliance_tag_from_id(conn, alliance_id):
@@ -512,4 +498,3 @@ def get_alliance_tag_from_id(conn, alliance_id):
     if result:
         return result[0]
     return None
-

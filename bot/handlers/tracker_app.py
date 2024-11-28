@@ -6,11 +6,12 @@ from utils.decorators import *
 from utils.printers import *
 from utils.logger import logger
 from funcs import *
+from utils.constants import ConfigKeys
 
 
 class TrackerApp(BaseApp):
-    def __init__(self, message, params, config):
-        super().__init__(message, params, config)
+    def __init__(self, message, params):
+        super().__init__(message, params)
         logger.info(f"Tracker params: {self.params}")
 
     async def run(self):
@@ -36,12 +37,13 @@ class TrackerApp(BaseApp):
     async def add(self, params):
         validated = validate_add_input(params)
         if validated:
-            guild_id = str(self.message.guild.id)
-
             try:
-                self.DB = self.config[guild_id]["database"]
+                self.DB = read_config_str(self.guild_id, "database", "")
             except KeyError:
                 response = no_db_error()
+                await self.message.channel.send(embed=response)
+                return
+
             logger.info(f"Params: {params}")
             coordinates = params.pop()
             coordinates = coordinates.replace("/", "|")
@@ -64,38 +66,35 @@ class TrackerApp(BaseApp):
 
     @is_dev_or_user_or_admin_privs
     async def get(self, params):
-        DB = self.config[self.guild_id]["database"]
-        game_server = self.config[self.guild_id]["game_server"]
+        self.DB = read_config_str(self.guild_id, ConfigKeys.DATABASE, "")
+        game_server = read_config_str(self.guild_id, ConfigKeys.GAME_SERVER, "")
 
         try:
             if isinstance(int(params[-1]), int):
                 # This means it was `!tracker get ign 5`
                 response = get_reports(
-                    DB, " ".join(params[:-1]), game_server, params[-1]
+                    self.DB, " ".join(params[:-1]), game_server, params[-1]
                 )
         except ValueError:
-            logger.warn(f"ValueError: {params}")
-            response = get_one_report(DB, " ".join(params), game_server)
+            response = get_one_report(self.DB, " ".join(params), game_server)
         except KeyError:
             response = no_db_error()
+
         await self.message.channel.send(embed=response)
 
     @is_dev_or_admin_privs
     async def delete(self, params, message):
-        guild_id = str(message.guild.id)
         logger.info(f"Params: {params}")
         ign = params[0]
         id = params[1]
-        DB = self.config[guild_id]["database"]
+        DB = read_config_str(self.guild_id, ConfigKeys.DATABASE, "")
         response = delete_report(DB, ign, id)
 
         await message.channel.send(embed=response)
 
     @is_dev_or_user_or_admin_privs
     async def list(self, message):
-        guild_id = str(message.guild.id)
-        self.DB = self.config[guild_id]["database"]
-
+        self.DB = read_config_str(self.guild_id, ConfigKeys.DATABASE, "")
         response = list_all_names(self.DB)
 
         await message.channel.send(embed=response)

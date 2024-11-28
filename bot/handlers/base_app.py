@@ -1,9 +1,9 @@
-import configparser
 from typing import List
 import discord
 
 from utils.logger import logger
-from utils.constants import BOT_SERVERS_DB_PATH
+from utils.constants import BOT_SERVERS_DB_PATH, ConfigKeys
+from utils.config_manager import read_config_str
 
 
 class BaseApp:
@@ -11,22 +11,16 @@ class BaseApp:
         self,
         message: discord.Message,
         params: List[str],
-        config: configparser.ConfigParser,
     ):
         self.message = message
         self.guild_id = str(self.message.guild.id)
         self.db_path = f"{BOT_SERVERS_DB_PATH}{self.guild_id}.db"
         self.keyword = params[0]
         self.params = params[1:]
-        self.config = config
-        self.config.read("config.ini")
 
-        try:
-            self.admin_role = self.config[self.guild_id]["admin_role"]
-            self.user_role = self.config[self.guild_id]["user_role"]
-            self.anvil_role = self.config[self.guild_id]["anvil_role"]
-        except KeyError:
-            logger.warn("Required role not set")
+        self.admin_role = read_config_str(self.guild_id, ConfigKeys.ADMIN_ROLE, "")
+        self.user_role = read_config_str(self.guild_id, ConfigKeys.USER_ROLE, "")
+        self.anvil_role = read_config_str(self.guild_id, ConfigKeys.ANVIL_ROLE, "")
 
     async def run(self):
         raise NotImplementedError
