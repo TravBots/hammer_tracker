@@ -4,6 +4,28 @@ class Colors:
     WARNING = 0xFFFF00
 
 
+class ConfigKeys:
+    TOKEN = "token"
+    GAME_SERVER = "game_server"
+    SERVER = "server"
+    DATABASE = "database"
+    INIT_USER = "init_user"
+    ADMIN_ROLE = "admin_role"
+    USER_ROLE = "user_role"
+    ANVIL_ROLE = "anvil_role"
+    DEFENSE_CHANNEL = "defense_channel"
+    ALERTS = "alerts"
+    IGNORE_24_7 = "ignore_24_7"
+    CLEAN_UP_THREADS = "clean_up_threads"
+    DEFAULT = "default"
+
+
+class Apps:
+    BOINK = "boink"
+    TRACKER = "tracker"
+    DEF = "def"
+
+
 MAP_MAX = 200
 MAP_MIN = -200
 

@@ -1,7 +1,12 @@
 import sqlite3
 
 import discord
-from utils.constants import BOT_SERVERS_DB_PATH, GAME_SERVERS_DB_PATH, Colors
+from utils.constants import (
+    BOT_SERVERS_DB_PATH,
+    GAME_SERVERS_DB_PATH,
+    Colors,
+    ConfigKeys,
+)
 from utils.logger import logger
 from utils.config_manager import read_config_str, update_config
 
@@ -11,12 +16,12 @@ def init(message):
     guild_id = str(message.guild.id)
     message_author = str(message.author)
 
-    if not read_config_str(guild_id, "init_user", ""):
-        update_config(guild_id, "init_user", message_author)
+    if not read_config_str(guild_id, ConfigKeys.INIT_USER, ""):
+        update_config(guild_id, ConfigKeys.INIT_USER, message_author)
 
     # `database` and `server` should be able to be updated. `init_user` above should not.
-    update_config(guild_id, "database", f"{BOT_SERVERS_DB_PATH}{guild_id}.db")
-    update_config(guild_id, "server", guild_name)
+    update_config(guild_id, ConfigKeys.DATABASE, f"{BOT_SERVERS_DB_PATH}{guild_id}.db")
+    update_config(guild_id, ConfigKeys.SERVER, guild_name)
 
     embed = discord.Embed(color=Colors.SUCCESS)
     embed.add_field(name="Success", value="Database initialized")

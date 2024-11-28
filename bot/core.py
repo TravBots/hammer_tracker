@@ -16,7 +16,7 @@ from funcs import (
     insert_defense_thread,
 )
 from interactions.cfd import Cfd
-from utils.constants import BOT_SERVERS_DB_PATH, Colors, crop_production
+from utils.constants import BOT_SERVERS_DB_PATH, Colors, ConfigKeys, crop_production
 from utils.logger import logger, periodic_log_check
 from utils.validators import coordinates_are_valid
 from zoneinfo import ZoneInfo
@@ -35,7 +35,7 @@ class Core(discord.Client):
     ) -> None:
         super().__init__(intents=intents, **options)
         self.tree = app_commands.CommandTree(self)
-        self.token = read_config_str("default", "token", "")
+        self.token = read_config_str(ConfigKeys.DEFAULT, ConfigKeys.TOKEN, "")
 
     async def setup_hook(self):
         self.close_threads.start()
@@ -64,7 +64,9 @@ class Core(discord.Client):
                         xy = last_item.split("|")
                     x = xy[0].strip()
                     y = xy[1].strip()
-                    game_server = read_config_str(message.guild.id, "game_server", "")
+                    game_server = read_config_str(
+                        message.guild.id, ConfigKeys.GAME_SERVER, ""
+                    )
                     embed = discord.Embed(color=Colors.SUCCESS)
                     embed.add_field(
                         name="",
@@ -73,11 +75,9 @@ class Core(discord.Client):
                     await message.channel.send(embed=embed)
 
     async def on_scheduled_event_create(self, event: discord.ScheduledEvent):
-        # Refresh config
-        self._reload_config()
         guild_id = str(event.guild.id)
-        defense_channel = read_config_str(guild_id, "defense_channel", "")
-        game_server = read_config_str(guild_id, "game_server", "")
+        defense_channel = read_config_str(guild_id, ConfigKeys.DEFENSE_CHANNEL, "")
+        game_server = read_config_str(guild_id, ConfigKeys.GAME_SERVER, "")
 
         x, y = event.location.replace("/", "|").split("|")
 
@@ -141,9 +141,13 @@ class Core(discord.Client):
         # If cfd land_time is in the past, archive the thread
         for guild in client.guilds:
             try:
-                clean_up_threads = read_config_bool(guild.id, "clean_up_threads", False)
+                clean_up_threads = read_config_bool(
+                    guild.id, ConfigKeys.CLEAN_UP_THREADS, False
+                )
                 if clean_up_threads:
-                    defense_channel = read_config_str(guild.id, "defense_channel", "")
+                    defense_channel = read_config_str(
+                        guild.id, ConfigKeys.DEFENSE_CHANNEL, ""
+                    )
                     channel = get_channel_from_id(guild, defense_channel)
 
                     if len(channel.threads) == 0:
@@ -182,7 +186,7 @@ class Core(discord.Client):
     async def _send_alerts_for_guild(self, guild):
         logger.info(f"Sending alerts for {str(guild.id)}")
         # Get all players that changed alliances from v_player_change
-        game_server = read_config_str(guild.id, "game_server", "")
+        game_server = read_config_str(guild.id, ConfigKeys.GAME_SERVER, "")
         conn = sqlite3.connect(get_connection_path(game_server))
         query = "select * from v_player_change where alliance_changed=1"
         rows = conn.execute(query)
@@ -215,9 +219,9 @@ class Core(discord.Client):
         for guild in client.guilds:
             try:
                 logger.info(
-                    f"Config for {guild}: {read_config_str(guild.id, 'alerts', '0')}"
+                    f"Config for {guild}: {read_config_str(guild.id, ConfigKeys.ALERTS, '0')}"
                 )
-                if read_config_str(guild.id, "alerts", "0") == "1":
+                if read_config_str(guild.id, ConfigKeys.ALERTS, "0") == "1":
                     await self._send_alerts_for_guild(guild)
             except KeyError as e:
                 logger.error(f"Failed to check alerts for {guild}")

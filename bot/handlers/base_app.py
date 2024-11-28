@@ -1,9 +1,8 @@
-import configparser
 from typing import List
 import discord
 
 from utils.logger import logger
-from utils.constants import BOT_SERVERS_DB_PATH
+from utils.constants import BOT_SERVERS_DB_PATH, ConfigKeys
 from utils.config_manager import read_config_str
 
 
@@ -19,9 +18,9 @@ class BaseApp:
         self.keyword = params[0]
         self.params = params[1:]
 
-        self.admin_role = read_config_str(self.guild_id, "admin_role", "")
-        self.user_role = read_config_str(self.guild_id, "user_role", "")
-        self.anvil_role = read_config_str(self.guild_id, "anvil_role", "")
+        self.admin_role = read_config_str(self.guild_id, ConfigKeys.ADMIN_ROLE, "")
+        self.user_role = read_config_str(self.guild_id, ConfigKeys.USER_ROLE, "")
+        self.anvil_role = read_config_str(self.guild_id, ConfigKeys.ANVIL_ROLE, "")
 
     async def run(self):
         raise NotImplementedError

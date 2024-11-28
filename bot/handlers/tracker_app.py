@@ -6,6 +6,7 @@ from utils.decorators import *
 from utils.printers import *
 from utils.logger import logger
 from funcs import *
+from utils.constants import ConfigKeys
 
 
 class TrackerApp(BaseApp):
@@ -65,8 +66,8 @@ class TrackerApp(BaseApp):
 
     @is_dev_or_user_or_admin_privs
     async def get(self, params):
-        self.DB = read_config_str(self.guild_id, "database", "")
-        game_server = read_config_str(self.guild_id, "game_server", "")
+        self.DB = read_config_str(self.guild_id, ConfigKeys.DATABASE, "")
+        game_server = read_config_str(self.guild_id, ConfigKeys.GAME_SERVER, "")
 
         try:
             if isinstance(int(params[-1]), int):
@@ -86,14 +87,14 @@ class TrackerApp(BaseApp):
         logger.info(f"Params: {params}")
         ign = params[0]
         id = params[1]
-        DB = read_config_str(self.guild_id, "database", "")
+        DB = read_config_str(self.guild_id, ConfigKeys.DATABASE, "")
         response = delete_report(DB, ign, id)
 
         await message.channel.send(embed=response)
 
     @is_dev_or_user_or_admin_privs
     async def list(self, message):
-        self.DB = read_config_str(self.guild_id, "database", "")
+        self.DB = read_config_str(self.guild_id, ConfigKeys.DATABASE, "")
         response = list_all_names(self.DB)
 
         await message.channel.send(embed=response)

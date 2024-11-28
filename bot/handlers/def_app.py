@@ -7,6 +7,7 @@ from utils.printers import *
 from utils.logger import logger
 from funcs import *
 from utils.config_manager import read_config_str
+from utils.constants import ConfigKeys
 
 
 class DefApp(BaseApp):
@@ -35,8 +36,8 @@ class DefApp(BaseApp):
 
     @is_dev_or_anvil_or_admin_privs
     async def list(self, message):
-        self.DB = read_config_str(self.guild_id, "database", "")
-        game_server = read_config_str(self.guild_id, "game_server", "")
+        self.DB = read_config_str(self.guild_id, ConfigKeys.DATABASE, "")
+        game_server = read_config_str(self.guild_id, ConfigKeys.GAME_SERVER, "")
         response = list_open_cfds(self.DB, game_server)
         await message.channel.send(embed=response)
 
@@ -56,7 +57,7 @@ class DefApp(BaseApp):
 
     @is_dev_or_anvil_or_admin_privs
     async def leaderboard(self, message):
-        self.DB = read_config_str(self.guild_id, "database", "")
+        self.DB = read_config_str(self.guild_id, ConfigKeys.DATABASE, "")
         response = get_leaderboard(self.db_path)
         await message.channel.send(embed=response)
 

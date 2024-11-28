@@ -21,7 +21,7 @@ from utils.errors import incorrect_roles_error, invalid_input_error, no_db_error
 from utils.logger import logger
 from utils.printers import rows_to_piped_strings
 from utils.config_manager import read_config_str, update_config
-
+from utils.constants import ConfigKeys
 from .base_app import BaseApp
 
 
@@ -56,7 +56,7 @@ class BoinkApp(BaseApp):
         logger.info("Initializing database...")
 
         response = init(self.message)
-        DB = read_config_str(self.guild_id, "database", "")
+        DB = read_config_str(self.guild_id, ConfigKeys.DATABASE, "")
 
         create_hammers = get_sql_by_path("sql/create_table_hammers.sql")
         create_defense_calls = get_sql_by_path("sql/create_table_defense_calls.sql")
@@ -84,23 +84,23 @@ class BoinkApp(BaseApp):
         embed = discord.Embed(description="Information", color=Colors.SUCCESS)
         embed.add_field(
             name="Server Name:",
-            value=read_config_str(self.guild_id, "server", ""),
+            value=read_config_str(self.guild_id, ConfigKeys.SERVER, ""),
         )
         embed.add_field(
             name="Game Server",
-            value=read_config_str(self.guild_id, "game_server", ""),
+            value=read_config_str(self.guild_id, ConfigKeys.GAME_SERVER, ""),
         )
         embed.add_field(
             name="Database Name:",
-            value=read_config_str(self.guild_id, "database", ""),
+            value=read_config_str(self.guild_id, ConfigKeys.DATABASE, ""),
         )
         embed.add_field(
             name="Admin Role",
-            value=read_config_str(self.guild_id, "admin_role", ""),
+            value=read_config_str(self.guild_id, ConfigKeys.ADMIN_ROLE, ""),
         )
         embed.add_field(
             name="User Role",
-            value=read_config_str(self.guild_id, "user_role", ""),
+            value=read_config_str(self.guild_id, ConfigKeys.USER_ROLE, ""),
         )
 
         await self.message.channel.send(embed=embed)
@@ -128,7 +128,7 @@ class BoinkApp(BaseApp):
 
     @is_dev_or_user_or_admin_privs
     async def search(self, params, message):
-        game_server = read_config_str(self.guild_id, "game_server", "")
+        game_server = read_config_str(self.guild_id, ConfigKeys.GAME_SERVER, "")
 
         if game_server == "":
             embed = discord.Embed(color=Colors.ERROR)
@@ -136,7 +136,7 @@ class BoinkApp(BaseApp):
             await message.channel.send(embed=embed)
             return
 
-        self.DB = read_config_str(self.guild_id, "database", "")
+        DB = read_config_str(self.guild_id, ConfigKeys.DATABASE, "")
         ign = " ".join(params).lower()
 
         try:
