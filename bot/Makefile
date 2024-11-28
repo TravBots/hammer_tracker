@@ -5,7 +5,7 @@ $(VENV):
 	@if [ ! -d env/ ]; then \
 		echo "Creating a virtual environment and installing dependencies..."; \
 	fi;
-	@python3 -m venv $(VENV)
+	@python -m venv $(VENV)
 	@$(BIN)/pip install --upgrade -q pip
 	@$(BIN)/pip install -q -r requirements.txt
 
