@@ -1,13 +1,13 @@
 import pytest
 import discord
-from discord import app_commands
-from unittest.mock import AsyncMock, MagicMock, patch
-from commands.general import scout, cfd
+from unittest.mock import AsyncMock, MagicMock
+from bot.commands.scout import scout
+from bot.commands.cfd import cfd
 from utils.constants import Colors, crop_production
 from interactions.cfd import Cfd
 
 
-class TestGeneralCommands:
+class TestCommands:
     @pytest.fixture
     def mock_interaction(self):
         interaction = MagicMock(spec=discord.Interaction)
@@ -134,9 +134,9 @@ class TestGeneralCommands:
         # Verify the modal was sent
         mock_interaction.response.send_modal.assert_called_once()
 
-        # Verify the correct modal type was used
+        # Get the modal and verify its type
         modal = mock_interaction.response.send_modal.call_args[0][0]
-        assert isinstance(modal, Cfd)
+        assert issubclass(type(modal), Cfd) or isinstance(modal, Cfd)
         assert modal.title == "CFD"
 
         # Verify the modal has all required fields

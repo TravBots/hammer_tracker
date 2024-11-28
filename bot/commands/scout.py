@@ -1,6 +1,5 @@
 import discord
 from discord import app_commands
-from interactions.cfd import Cfd
 from utils.constants import Colors, crop_production
 
 
@@ -105,8 +104,3 @@ async def scout(
         value=f"Expected hammer size (in crop consumption): **{int(hammer_size):,}**",
     )
     await interaction.response.send_message(embed=embed)
-
-
-@app_commands.command(description="Submit a new CFD")
-async def cfd(interaction: discord.Interaction):
-    await interaction.response.send_modal(Cfd())

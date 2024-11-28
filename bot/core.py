@@ -15,13 +15,12 @@ from funcs import (
     get_connection_path,
     insert_defense_thread,
 )
-from interactions.cfd import Cfd
-from utils.constants import BOT_SERVERS_DB_PATH, Colors, ConfigKeys, crop_production
+from utils.constants import BOT_SERVERS_DB_PATH, Colors, ConfigKeys
 from utils.logger import logger, periodic_log_check
 from utils.validators import coordinates_are_valid
 from zoneinfo import ZoneInfo
 from utils.config_manager import read_config_str, read_config_bool
-from commands.general import scout, cfd
+from bot.commands import COMMAND_LIST
 
 intents = discord.Intents.all()
 intents.message_content = True
@@ -40,8 +39,8 @@ class Core(discord.Client):
 
     async def setup_hook(self):
         # Add the commands directly
-        self.tree.add_command(scout)
-        self.tree.add_command(cfd)
+        for command in COMMAND_LIST:
+            self.tree.add_command(command)
 
         # Start tasks
         self.close_threads.start()
