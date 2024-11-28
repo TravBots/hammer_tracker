@@ -5,7 +5,7 @@ from handlers.boink_app import BoinkApp
 from handlers.def_app import DefApp
 from handlers.tracker_app import TrackerApp
 from handlers.base_app import BaseApp
-from utils.constants import APPLICATIONS
+from utils.constants import APPLICATIONS, Apps
 
 """
 For each message posted in the server:
