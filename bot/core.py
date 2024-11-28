@@ -20,7 +20,7 @@ from utils.logger import logger, periodic_log_check
 from utils.validators import coordinates_are_valid
 from zoneinfo import ZoneInfo
 from utils.config_manager import read_config_str, read_config_bool
-from bot.commands import COMMAND_LIST
+from commands import COMMAND_LIST
 
 intents = discord.Intents.all()
 intents.message_content = True
