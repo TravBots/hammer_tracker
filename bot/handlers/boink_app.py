@@ -95,11 +95,11 @@ class BoinkApp(BaseApp):
             value=read_config_str(self.guild_id, "database", ""),
         )
         embed.add_field(
-            name="Tracker Admin",
+            name="Admin Role",
             value=read_config_str(self.guild_id, "admin_role", ""),
         )
         embed.add_field(
-            name="Tracker User",
+            name="User Role",
             value=read_config_str(self.guild_id, "user_role", ""),
         )
 
