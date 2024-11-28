@@ -3,7 +3,10 @@ FROM python:3.11.1-slim-bullseye
 ARG DISCORD_BOT_TOKEN
 
 ADD . /bot
-RUN rm /bot/config.ini
+
+# Uncomment this line if you are running locally
+# RUN rm /bot/config.ini
+
 ADD setup.sh /bot
 
 WORKDIR /bot
