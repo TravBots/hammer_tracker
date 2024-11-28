@@ -1,17 +1,18 @@
-import factory
+from bot.utils import factory
 from handlers.boink_app import BoinkApp
 from handlers.def_app import DefApp
 from handlers.tracker_app import TrackerApp
+from bot.test.conftest import build_mock_message
 
-from mocks import *
 
+MESSAGE_1 = build_mock_message(content="!boink keyword some text here")
+MESSAGE_2 = build_mock_message(content="!tracker keyword some text here")
+MESSAGE_3 = build_mock_message(content="!def keyword some text here")
+MESSAGE_4 = build_mock_message(content="boink keyword some text here")
+MESSAGE_5 = build_mock_message(content="tracker keyword some text_here")
+MESSAGE_6 = build_mock_message(content="def keyword some text here")
 
-MESSAGE_1 = MockMessage(content="!boink keyword some text here")
-MESSAGE_2 = MockMessage(content="!tracker keyword some text here")
-MESSAGE_3 = MockMessage(content="!def keyword some text here")
-MESSAGE_4 = MockMessage(content="boink keyword some text here", bot=True)
-MESSAGE_5 = MockMessage(content="tracker keyword some text_here")
-MESSAGE_6 = MockMessage(content="def keyword some text here")
+MESSAGE_4.author.bot = True
 
 
 class TestFactory:

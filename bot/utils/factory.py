@@ -7,13 +7,6 @@ from handlers.tracker_app import TrackerApp
 from handlers.base_app import BaseApp
 from utils.constants import APPLICATIONS, Apps
 
-"""
-For each message posted in the server:
-    * Validate that it is sent by a user, not a bot
-    * Validate that it is a command meant for the bot
-    * Separate the application (e.g. "tracker") from params (e.g. "get praxis")
-    * Return an instance of a class representing the correct subsystem based on the provided application
-"""
 
 PREFIX = "!"
 
@@ -28,14 +21,17 @@ def _is_bot_message(message: discord.Message) -> bool:
 
 
 def get_app(message) -> BaseApp:
+    # Ignore messages sent by bots
     if _is_bot_message(message):
         return None
 
+    # Validate that the message starts with a bot command
     if _is_command(message):
         app = message.content.split()[0].strip(PREFIX)
         params = message.content.split()[1:]
         logger.info(f"App: {app}, Params: {params}")
 
+        # Return an instance of the correct application class
         if app == Apps.BOINK:
             return BoinkApp(message, params)
         elif app == Apps.DEF:

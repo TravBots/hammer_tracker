@@ -2,7 +2,7 @@ import pytest
 from unittest.mock import AsyncMock, MagicMock
 from unittest.mock import patch
 from utils.constants import Colors, pytest_id
-from utils.config_manager import read_config_str, update_config
+from utils.config_manager import update_config
 
 MOCK_GAME_SERVER = "https://ts2.x1.america.travian.com"
 

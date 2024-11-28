@@ -1,0 +1,7 @@
+discord
+pyyaml
+requests
+pandas
+pytest
+pytest-asyncio
+ruff
