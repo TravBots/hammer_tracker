@@ -50,35 +50,36 @@ class Core(discord.Client):
         await self.tree.sync()
 
     async def on_message(self, message: discord.Message):
-        # Does mixing async with sync code like this mess anything up?
+        if message.author.bot:
+            return
+
         app = get_app(message)
         if app is not None:
             await app.run()
+            return
 
-        if not message.author.bot:
-            last_item = message.content.split(" ")[-1].replace("?", "")
-            ignore_24_7 = read_config_bool(message.guild.id, "ignore_24_7", False)
+        last_item = message.content.split(" ")[-1].replace("?", "")
+        ignore_24_7 = read_config_bool(message.guild.id, "ignore_24_7", False)
 
-            if coordinates_are_valid(last_item, ignore_24_7):
-                if not message.author.bot:
-                    slash = "/" in last_item
-                    pipe = "|" in last_item
+        if coordinates_are_valid(last_item, ignore_24_7):
+            slash = "/" in last_item
+            pipe = "|" in last_item
 
-                    if slash:
-                        xy = last_item.split("/")
-                    elif pipe:
-                        xy = last_item.split("|")
-                    x = xy[0].strip()
-                    y = xy[1].strip()
-                    game_server = read_config_str(
-                        message.guild.id, ConfigKeys.GAME_SERVER, ""
-                    )
-                    embed = discord.Embed(color=Colors.SUCCESS)
-                    embed.add_field(
-                        name="",
-                        value=f"{game_server}/position_details.php?x={x}&y={y}",
-                    )
-                    await message.channel.send(embed=embed)
+            if slash:
+                xy = last_item.split("/")
+            elif pipe:
+                xy = last_item.split("|")
+            x = xy[0].strip()
+            y = xy[1].strip()
+            game_server = read_config_str(
+                message.guild.id, ConfigKeys.GAME_SERVER, ""
+            )
+            embed = discord.Embed(color=Colors.SUCCESS)
+            embed.add_field(
+                name="",
+                value=f"{game_server}/position_details.php?x={x}&y={y}",
+            )
+            await message.channel.send(embed=embed)
 
     async def on_scheduled_event_create(self, event: discord.ScheduledEvent):
         guild_id = str(event.guild.id)
