@@ -6,7 +6,7 @@ import string
 import discord
 from discord import app_commands
 from discord.ext import tasks
-from factory import get_app
+from utils.factory import get_app
 from funcs import (
     cancel_cfd,
     create_cfd,
