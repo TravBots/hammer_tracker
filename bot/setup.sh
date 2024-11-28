@@ -1,5 +1,5 @@
-if [ ! -d databases ]; then
-    mkdir databases
+if [ ! -d ../databases ]; then
+    mkdir ../databases
 fi
 
 if [ ! -f config.ini ]; then

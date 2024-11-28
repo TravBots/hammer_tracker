@@ -10,3 +10,12 @@ jobs:
       - name: Run tests
         working-directory: bot
         run: make test
+  end-to-end-test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      - name: build-image
+        run: docker build . -t boink_bot --build-arg DISCORD_BOT_TOKEN=${{ secrets.DISCORD_BOT_TOKEN }}
+      - name: run-tests
+        run: docker run boink_bot test/E2E/init_server.py

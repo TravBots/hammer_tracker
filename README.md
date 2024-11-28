@@ -51,35 +51,27 @@ A Discord bot and web dashboard for tracking and analyzing Travian game data. Th
 ### Bot Setup
 
 1. Clone the repository
-2. Create a virtual environment:
-
-```python
-python -m venv env
-source env/bin/activate  # Linux/Mac
-.\env\Scripts\activate  # Windows
-```
-
-3. Install dependencies:
+2. Run the setup script with your Discord bot token:
 
 ```bash
-pip install -r requirements.txt
+# This will:
+# -- Create necessary database directories
+# -- Create config.ini with your bot token
+# -- Set up the database structure
+
+./setup.sh YOUR_DISCORD_BOT_TOKEN
 ```
 
-4. Create `config.ini` in the bot directory:
-
-```ini
-[default]
-token = YOUR_DISCORD_BOT_TOKEN
-database = databases/default.db
-
-[meta]
-database = databases/meta.db
-```
-
-5. Initialize the database structure:
+3. Create virtual environment and install dependencies:
 
 ```bash
-python databases/manage.py --refresh-views
+# This will:
+# -- Create a new virtual environment
+# -- Install all required dependencies
+# -- Clean any existing caches/temporary files
+
+cd bot
+make reset
 ```
 
 ### Dashboard Setup
@@ -152,26 +144,35 @@ This project is licensed under the MIT License - see the LICENSE file for detail
 - Dash for the web dashboard
 - Plotly for data visualization
 
-### Available Commands
+### Development Commands
 
 All commands must be run from the `bot` directory.
 
 #### Run Tests
 
 ```bash
-./commands.sh test [test_file]
+make test
 ```
 
-Runs pytest for all tests or a specific test file.
-
-- Without argument: Runs all tests in `test/` directory
-- With argument: Runs specific test file (omit .py extension)  
-  Example: `./commands.sh test test_boink_app`
+Runs pytest for all tests in the `test/` directory.
 
 #### Run Development Mode
 
 ```bash
-./commands.sh dev
+make dev
 ```
 
 Runs the bot in development mode.
+
+#### Code Formatting and Linting
+
+```bash
+make format  # Format code using ruff
+make lint    # Run linting checks
+```
+
+#### Clean Environment
+
+```bash
+make reset   # Clean and recreate virtual environment
+```
