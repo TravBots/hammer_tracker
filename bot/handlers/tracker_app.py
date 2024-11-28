@@ -9,8 +9,8 @@ from funcs import *
 
 
 class TrackerApp(BaseApp):
-    def __init__(self, message, params, core):
-        super().__init__(message, params, core)
+    def __init__(self, message, params):
+        super().__init__(message, params)
         logger.info(f"Tracker params: {self.params}")
 
     async def run(self):
@@ -37,7 +37,7 @@ class TrackerApp(BaseApp):
         validated = validate_add_input(params)
         if validated:
             try:
-                self.DB = self.core.read_config_str(self.guild_id, "database", "")
+                self.DB = read_config_str(self.guild_id, "database", "")
             except KeyError:
                 response = no_db_error()
                 await self.message.channel.send(embed=response)
@@ -65,8 +65,8 @@ class TrackerApp(BaseApp):
 
     @is_dev_or_user_or_admin_privs
     async def get(self, params):
-        self.DB = self.core.read_config_str(self.guild_id, "database", "")
-        game_server = self.core.read_config_str(self.guild_id, "game_server", "")
+        self.DB = read_config_str(self.guild_id, "database", "")
+        game_server = read_config_str(self.guild_id, "game_server", "")
 
         try:
             if isinstance(int(params[-1]), int):
@@ -86,14 +86,14 @@ class TrackerApp(BaseApp):
         logger.info(f"Params: {params}")
         ign = params[0]
         id = params[1]
-        DB = self.core.read_config_str(self.guild_id, "database", "")
+        DB = read_config_str(self.guild_id, "database", "")
         response = delete_report(DB, ign, id)
 
         await message.channel.send(embed=response)
 
     @is_dev_or_user_or_admin_privs
     async def list(self, message):
-        self.DB = self.core.read_config_str(self.guild_id, "database", "")
+        self.DB = read_config_str(self.guild_id, "database", "")
         response = list_all_names(self.DB)
 
         await message.channel.send(embed=response)

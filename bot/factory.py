@@ -27,7 +27,7 @@ def _is_bot_message(message: discord.Message) -> bool:
     return message.author.bot is True
 
 
-def get_app(message, core) -> BaseApp:
+def get_app(message) -> BaseApp:
     if _is_bot_message(message):
         return None
 
@@ -37,11 +37,11 @@ def get_app(message, core) -> BaseApp:
         logger.info(f"App: {app}, Params: {params}")
 
         if app == "boink":
-            return BoinkApp(message, params, core)
+            return BoinkApp(message, params)
         elif app == "def":
-            return DefApp(message, params, core)
+            return DefApp(message, params)
         elif app == "tracker":
-            return TrackerApp(message, params, core)
+            return TrackerApp(message, params)
         else:
             raise ValueError(f"Invalid application : {app}")
     else:

@@ -20,13 +20,14 @@ from utils.decorators import (
 from utils.errors import incorrect_roles_error, invalid_input_error, no_db_error
 from utils.logger import logger
 from utils.printers import rows_to_piped_strings
+from utils.config_manager import read_config_str, update_config
 
 from .base_app import BaseApp
 
 
 class BoinkApp(BaseApp):
-    def __init__(self, message, params, core):
-        super().__init__(message, params, core)
+    def __init__(self, message, params):
+        super().__init__(message, params)
 
     async def run(self):
         try:
@@ -54,8 +55,8 @@ class BoinkApp(BaseApp):
     async def _init(self):
         logger.info("Initializing database...")
 
-        response = init(self.core, self.message)
-        DB = self.core.read_config_str(self.guild_id, "database", "")
+        response = init(self.message)
+        DB = read_config_str(self.guild_id, "database", "")
 
         create_hammers = get_sql_by_path("sql/create_table_hammers.sql")
         create_defense_calls = get_sql_by_path("sql/create_table_defense_calls.sql")
@@ -83,23 +84,23 @@ class BoinkApp(BaseApp):
         embed = discord.Embed(description="Information", color=Colors.SUCCESS)
         embed.add_field(
             name="Server Name:",
-            value=self.core.read_config_str(self.guild_id, "server", ""),
+            value=read_config_str(self.guild_id, "server", ""),
         )
         embed.add_field(
             name="Game Server",
-            value=self.core.read_config_str(self.guild_id, "game_server", ""),
+            value=read_config_str(self.guild_id, "game_server", ""),
         )
         embed.add_field(
             name="Database Name:",
-            value=self.core.read_config_str(self.guild_id, "database", ""),
+            value=read_config_str(self.guild_id, "database", ""),
         )
         embed.add_field(
             name="Tracker Admin",
-            value=self.core.read_config_str(self.guild_id, "admin_role", ""),
+            value=read_config_str(self.guild_id, "admin_role", ""),
         )
         embed.add_field(
             name="Tracker User",
-            value=self.core.read_config_str(self.guild_id, "user_role", ""),
+            value=read_config_str(self.guild_id, "user_role", ""),
         )
 
         await self.message.channel.send(embed=embed)
@@ -109,7 +110,7 @@ class BoinkApp(BaseApp):
         setting_name = params[0]
         setting_value = " ".join(params[1:])
 
-        updated = self.core.update_config(self.guild_id, setting_name, setting_value)
+        updated = update_config(self.guild_id, setting_name, setting_value)
 
         if updated:
             embed = discord.Embed(color=Colors.SUCCESS)
@@ -127,11 +128,18 @@ class BoinkApp(BaseApp):
 
     @is_dev_or_user_or_admin_privs
     async def search(self, params, message):
-        self.DB = self.core.read_config_str(self.guild_id, "database", "")
+        game_server = read_config_str(self.guild_id, "game_server", "")
+
+        if game_server == "":
+            embed = discord.Embed(color=Colors.ERROR)
+            embed.add_field(name="Error", value="No game_server set.")
+            await message.channel.send(embed=embed)
+            return
+
+        self.DB = read_config_str(self.guild_id, "database", "")
         ign = " ".join(params).lower()
 
         try:
-            game_server = self.core.read_config_str(self.guild_id, "game_server", "")
             cnx = sqlite3.connect(get_connection_path(game_server))
 
             # First attempt an exact match
@@ -158,7 +166,9 @@ class BoinkApp(BaseApp):
             df["village_markdown"] = (
                 "["
                 + df["village_name"]
-                + "](https://ts2.x1.europe.travian.com/position_details.php?x="
+                + "]("
+                + game_server
+                + "/position_details.php?x="
                 + df["x_coordinate"].astype(str)
                 + "&y="
                 + df["y_coordinate"].astype(str)
@@ -174,7 +184,7 @@ class BoinkApp(BaseApp):
             if not df.empty:
                 link = (
                     f"[View on Travstat](https://www.travstat.com/players/{player_id}) | "
-                    f"[View in-game](https://ts2.x1.europe.travian.com/profile/{player_id})"
+                    f"[View in-game](" + game_server + "/profile/{player_id})"
                 )
                 embed = discord.Embed(title=player, color=Colors.SUCCESS)
                 embed.description = (
@@ -204,7 +214,7 @@ class BoinkApp(BaseApp):
         logger.info(f"Action: {action}")
 
         if action == "enable":
-            updated = self.core.update_config(self.guild_id, "alerts", "1")
+            updated = update_config(self.guild_id, "alerts", "1")
             if updated:
                 embed = discord.Embed(color=Colors.SUCCESS)
                 embed.add_field(name="Success", value="Alerts enabled")

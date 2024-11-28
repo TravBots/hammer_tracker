@@ -6,11 +6,12 @@ from utils.decorators import *
 from utils.printers import *
 from utils.logger import logger
 from funcs import *
+from utils.config_manager import read_config_str
 
 
 class DefApp(BaseApp):
-    def __init__(self, message, params, core):
-        super().__init__(message, params, core)
+    def __init__(self, message, params):
+        super().__init__(message, params)
 
     async def run(self):
         try:
@@ -34,8 +35,8 @@ class DefApp(BaseApp):
 
     @is_dev_or_anvil_or_admin_privs
     async def list(self, message):
-        self.DB = self.core.read_config_str(self.guild_id, "database", "")
-        game_server = self.core.read_config_str(self.guild_id, "game_server", "")
+        self.DB = read_config_str(self.guild_id, "database", "")
+        game_server = read_config_str(self.guild_id, "game_server", "")
         response = list_open_cfds(self.DB, game_server)
         await message.channel.send(embed=response)
 
@@ -55,7 +56,7 @@ class DefApp(BaseApp):
 
     @is_dev_or_anvil_or_admin_privs
     async def leaderboard(self, message):
-        self.DB = self.core.read_config_str(self.guild_id, "database", "")
+        self.DB = read_config_str(self.guild_id, "database", "")
         response = get_leaderboard(self.db_path)
         await message.channel.send(embed=response)
 

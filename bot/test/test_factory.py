@@ -27,7 +27,7 @@ class TestFactory:
         assert not factory._is_bot_message(MESSAGE_1)
         assert factory._is_bot_message(MESSAGE_4)
 
-    def test_get_application(self, mock_core):
-        assert isinstance(factory.get_app(MESSAGE_1, mock_core), BoinkApp)
-        assert isinstance(factory.get_app(MESSAGE_2, mock_core), TrackerApp)
-        assert isinstance(factory.get_app(MESSAGE_3, mock_core), DefApp)
+    def test_get_application(self):
+        assert isinstance(factory.get_app(MESSAGE_1), BoinkApp)
+        assert isinstance(factory.get_app(MESSAGE_2), TrackerApp)
+        assert isinstance(factory.get_app(MESSAGE_3), DefApp)

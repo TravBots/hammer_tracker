@@ -3,23 +3,20 @@ import sqlite3
 import discord
 from utils.constants import BOT_SERVERS_DB_PATH, GAME_SERVERS_DB_PATH, Colors
 from utils.logger import logger
+from utils.config_manager import read_config_str, update_config
 
 
-def init(core, message):
+def init(message):
     guild_name = str(message.guild.name)
     guild_id = str(message.guild.id)
     message_author = str(message.author)
 
-    if not core.config.has_section(guild_id):
-        core.config.add_section(guild_id)
-        core.update_config(guild_id, "init_user", message_author)
+    if not read_config_str(guild_id, "init_user", ""):
+        update_config(guild_id, "init_user", message_author)
 
     # `database` and `server` should be able to be updated. `init_user` above should not.
-    core.update_config(guild_id, "database", f"{BOT_SERVERS_DB_PATH}{guild_id}.db")
-    core.update_config(guild_id, "server", guild_name)
-
-    with open("config.ini", "w") as conf:
-        core.config.write(conf)
+    update_config(guild_id, "database", f"{BOT_SERVERS_DB_PATH}{guild_id}.db")
+    update_config(guild_id, "server", guild_name)
 
     embed = discord.Embed(color=Colors.SUCCESS)
     embed.add_field(name="Success", value="Database initialized")
