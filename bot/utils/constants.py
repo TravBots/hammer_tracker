@@ -26,6 +26,8 @@ class Apps:
     DEF = "def"
 
 
+APPLICATIONS = [Apps.BOINK, Apps.TRACKER, Apps.DEF]
+
 MAP_MAX = 200
 MAP_MIN = -200
 

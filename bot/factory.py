@@ -5,7 +5,7 @@ from handlers.boink_app import BoinkApp
 from handlers.def_app import DefApp
 from handlers.tracker_app import TrackerApp
 from handlers.base_app import BaseApp
-from utils.constants import Apps
+from utils.constants import APPLICATIONS
 
 """
 For each message posted in the server:
@@ -16,7 +16,6 @@ For each message posted in the server:
 """
 
 PREFIX = "!"
-APPLICATIONS = ["boink", "def", "tracker"]
 
 
 def _is_command(message: discord.Message) -> bool:
