@@ -1,5 +1,6 @@
 import discord
 from discord import app_commands
+from interactions.cfd import Cfd
 from utils.constants import Colors, crop_production
 
 
@@ -108,6 +109,4 @@ async def scout(
 
 @app_commands.command(description="Submit a new CFD")
 async def cfd(interaction: discord.Interaction):
-    from interactions.cfd import Cfd
-
     await interaction.response.send_modal(Cfd())
