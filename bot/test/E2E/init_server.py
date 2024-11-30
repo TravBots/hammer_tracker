@@ -45,14 +45,6 @@ class TestCore(Core):
         await super().on_message(message)
 
 
-# Update client initialization to use TestCore
-intents = discord.Intents.all()
-intents.message_content = True
-client = TestCore(intents=intents)
-
-webhook_url = "https://discord.com/api/webhooks/1311776425631678616/qu_vOsCEG0osv6lD1-6PtLjnekDDMIq9F4UqLYO_dTUF23K2-lVb0mi8MT6MHH38EY8k"
-
-
 async def main():
 
     @client.event
@@ -68,7 +60,7 @@ def run_discord_client():
     asyncio.run(main())
 
 
-def post_to_webhook(message: str):
+def post_to_webhook(webhook_url: str, message: str):
     data = {
         "content": message,
         "username": "Boink CI/CD",
@@ -80,8 +72,8 @@ def post_to_webhook(message: str):
         print(f"Not sent with {result.status_code}, response:\n{result.json()}")
 
 
-def test_command(message: str):
-    post_to_webhook(message)
+def test_command(webhook_url: str, message: str):
+    post_to_webhook(webhook_url, message)
 
     if not process_lock.wait(timeout=30):
         print(f"Failed on command {message} within 30 seconds")
@@ -92,6 +84,19 @@ def test_command(message: str):
 
 
 if __name__ == "__main__":
+    # Set webhook url from the first argument
+    webhook_url = None
+    if len(sys.argv) > 1:
+        webhook_url = sys.argv[1]
+    else:
+        print("No webhook URL provided")
+        sys.exit(1)
+
+    # Update client initialization to use TestCore
+    intents = discord.Intents.all()
+    intents.message_content = True
+    client = TestCore(intents=intents)
+
     client_thread = threading.Thread(target=run_discord_client, daemon=True)
     client_thread.start()
 
@@ -103,13 +108,19 @@ if __name__ == "__main__":
         process_lock.clear()
         print("Connected to Discord")
 
-    post_to_webhook("$$$$$$$$$$$$$$$$$$$$$$ Starting tests$$$$$$$$$$$$$$$$$$$$$$")
+    post_to_webhook(
+        webhook_url, "$$$$$$$$$$$$$$$$$$$$$$ Starting tests$$$$$$$$$$$$$$$$$$$$$$"
+    )
 
-    test_command("!boink init")
-    test_command("!boink set admin_role ADMIN")
-    test_command("!boink set user_role USER")
-    test_command("!boink set game_server https://ts2.x1.europe.travian.com")
-    test_command("!boink search test")
+    test_command(webhook_url, "!boink init")
+    test_command(webhook_url, "!boink set admin_role ADMIN")
+    test_command(webhook_url, "!boink set user_role USER")
+    test_command(
+        webhook_url, "!boink set game_server https://ts2.x1.europe.travian.com"
+    )
+    test_command(webhook_url, "!boink search test")
 
-    post_to_webhook("$$$$$$$$$$$$$$$$$$$$$$ Tests completed $$$$$$$$$$$$$$$$$$$$$$")
+    post_to_webhook(
+        webhook_url, "$$$$$$$$$$$$$$$$$$$$$$ Tests completed $$$$$$$$$$$$$$$$$$$$$$"
+    )
     print("All tests completed successfully!")

@@ -26,7 +26,7 @@ def get_app(message) -> BaseApp:
     )
     # Ignore messages sent by bots; let webhooks pass through for ci/cd
     if _is_bot_message(message):
-        if message.author.id != 1311776425631678616:  # Allow CI/CD webhook
+        if message.webhook_id is None:
             return None
 
     # Validate that the message starts with a bot command
