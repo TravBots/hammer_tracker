@@ -19,4 +19,4 @@ jobs:
         working-directory: ./bot
         run: docker build . -t boink_bot --build-arg DISCORD_BOT_TOKEN=${{ secrets.DISCORD_BOT_TOKEN }}
       - name: run-tests
-        run: docker run boink_bot test/E2E/init_server.py
+        run: docker run boink_bot test/E2E/init_server.py ${{ secrets.WEBHOOK_URL }}
