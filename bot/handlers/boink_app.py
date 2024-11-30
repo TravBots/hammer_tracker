@@ -109,6 +109,14 @@ class BoinkApp(BaseApp):
 
     @is_dev_or_guild_admin
     async def _set_config_value(self, params):
+        embed = discord.Embed(color=Colors.ERROR)
+        embed.add_field(
+            name="Error",
+            value=f"Failed to set {setting_name} as {setting_value}",
+        )
+        await self.message.channel.send(embed=embed)
+        return
+
         setting_name = params[0]
         setting_value = " ".join(params[1:])
 

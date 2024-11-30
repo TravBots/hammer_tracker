@@ -4,7 +4,6 @@ import discord
 from utils.logger import logger
 from utils.constants import BOT_SERVERS_DB_PATH, ConfigKeys
 from utils.config_manager import read_config_str
-from utils.constants import dev_ids
 
 
 class BaseApp:
