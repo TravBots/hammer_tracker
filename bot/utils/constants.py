@@ -34,8 +34,10 @@ MAP_MIN = -200
 BOT_SERVERS_DB_PATH = "../databases/bot_servers/"
 GAME_SERVERS_DB_PATH = "../databases/game_servers/"
 
-dev_ids = [322602660555653151, 177473204011401216]
 pytest_id = 1234
+ci_cd_id = 1312198246059348030
+dev_ids = [322602660555653151, 177473204011401216, ci_cd_id]
+
 
 crop_production = {
     10: 280,

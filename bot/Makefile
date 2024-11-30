@@ -1,5 +1,6 @@
 VENV = env
 BIN=$(VENV)/bin
+CONFIG = config.ini
 
 $(VENV):
 	@if [ ! -d env/ ]; then \
@@ -8,6 +9,19 @@ $(VENV):
 	@python -m venv $(VENV)
 	@$(BIN)/pip install --upgrade -q pip
 	@$(BIN)/pip install -q -r requirements.txt
+
+setup:
+	@if [ ! -d databases ]; then \
+		mkdir databases; \
+	fi
+	@if [ ! -f $(CONFIG) ]; then \
+		echo "[default]" > $(CONFIG); \
+		echo "token = $${DISCORD_BOT_TOKEN}" >> $(CONFIG); \
+		echo "database = databases/default.db" >> $(CONFIG); \
+		echo "" >> $(CONFIG); \
+		echo "[meta]" >> $(CONFIG); \
+		echo "database = databases/meta.db" >> $(CONFIG); \
+	fi
 
 dev: $(VENV)
 	@$(BIN)/python core.py

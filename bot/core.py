@@ -50,10 +50,8 @@ class Core(discord.Client):
         await self.tree.sync()
 
     async def on_message(self, message: discord.Message):
-        if message.author.bot:
-            return
-
         app = get_app(message)
+        logger.debug(f"App: {app}")
         if app is not None:
             await app.run()
             return
@@ -71,9 +69,7 @@ class Core(discord.Client):
                 xy = last_item.split("|")
             x = xy[0].strip()
             y = xy[1].strip()
-            game_server = read_config_str(
-                message.guild.id, ConfigKeys.GAME_SERVER, ""
-            )
+            game_server = read_config_str(message.guild.id, ConfigKeys.GAME_SERVER, "")
             embed = discord.Embed(color=Colors.SUCCESS)
             embed.add_field(
                 name="",
@@ -146,7 +142,7 @@ class Core(discord.Client):
         # Get threads in Channel
         # For each thread, get associated cfd
         # If cfd land_time is in the past, archive the thread
-        for guild in client.guilds:
+        for guild in self.guilds:
             try:
                 clean_up_threads = read_config_bool(
                     guild.id, ConfigKeys.CLEAN_UP_THREADS, False
@@ -223,7 +219,7 @@ class Core(discord.Client):
         await self.wait_until_ready()
         logger.info("Running server database alerts")
 
-        for guild in client.guilds:
+        for guild in self.guilds:
             try:
                 logger.info(
                     f"Config for {guild}: {read_config_str(guild.id, ConfigKeys.ALERTS, '0')}"

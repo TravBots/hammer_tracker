@@ -22,7 +22,7 @@ def setup_logging():
     log_path = os.path.join(log_dir, log_filename)
 
     logger.basicConfig(
-        level=logger.DEBUG,
+        level=logger.INFO,
         format="%(asctime)s - %(filename)s:%(lineno)d - %(levelname)s - %(message)s",
         handlers=[logger.StreamHandler(), logger.FileHandler(log_path)],
     )

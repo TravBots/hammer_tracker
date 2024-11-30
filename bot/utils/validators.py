@@ -95,11 +95,17 @@ def validate_add_input(params: List[str]) -> bool:
 
 def validate_role_exists(guild: discord.Guild, role):
     logger.info(f"Validating {role}")
-    return role.lower() in [role.name.lower() for role in guild.roles]
+    try:
+        return role.lower() in [role.name.lower() for role in guild.roles]
+    except AttributeError:
+        return False
 
 
 def user_is_guild_admin(message: discord.Message) -> bool:
-    return message.author.guild_permissions.administrator
+    try:
+        return message.author.guild_permissions.administrator
+    except AttributeError:
+        return False
 
 
 def user_has_role(role, message) -> bool:
@@ -109,7 +115,10 @@ def user_has_role(role, message) -> bool:
 
     return: boolean
     """
-    return role.lower() in [a.name.lower() for a in message.author.roles]
+    try:
+        return role.lower() in [a.name.lower() for a in message.author.roles]
+    except AttributeError:
+        return False
 
 
 def is_dev(message) -> bool:

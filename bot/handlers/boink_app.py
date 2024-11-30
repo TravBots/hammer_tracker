@@ -48,6 +48,8 @@ class BoinkApp(BaseApp):
                 response = invalid_input_error()
                 await self.message.channel.send(embed=response)
         except Exception as e:
+            logger.error(f"Error in BoinkApp: {e}")
+            logger.error(traceback.format_exc())
             response = incorrect_roles_error([str(e)])
             await self.message.channel.send(embed=response)
 
