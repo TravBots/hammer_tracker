@@ -4,7 +4,7 @@ import sqlite3
 
 from typing import List
 
-from utils.constants import dev_ids, pytest_id, MAP_MAX, MAP_MIN
+from utils.constants import dev_ids, pytest_id, MAP_MAX, MAP_MIN, FORWARDING_MAP
 from utils.logger import logger
 
 
@@ -123,3 +123,10 @@ def user_has_role(role, message) -> bool:
 
 def is_dev(message) -> bool:
     return message.author.id in dev_ids or message.author.id == pytest_id
+
+
+def should_forward(message: discord.Message):
+    key = f"{message.guild.id}#{message.channel.id}"
+    if key in FORWARDING_MAP:
+        return FORWARDING_MAP[key]
+    return None

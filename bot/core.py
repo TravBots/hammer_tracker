@@ -15,9 +15,9 @@ from funcs import (
     get_connection_path,
     insert_defense_thread,
 )
-from utils.constants import BOT_SERVERS_DB_PATH, Colors, ConfigKeys
+from utils.constants import ALLOW_FORWARDING, BOT_SERVERS_DB_PATH, Colors, ConfigKeys
 from utils.logger import logger, periodic_log_check
-from utils.validators import coordinates_are_valid
+from utils.validators import coordinates_are_valid, should_forward
 from zoneinfo import ZoneInfo
 from utils.config_manager import read_config_str, read_config_bool
 from commands import COMMAND_LIST
@@ -50,6 +50,17 @@ class Core(discord.Client):
         await self.tree.sync()
 
     async def on_message(self, message: discord.Message):
+        if ALLOW_FORWARDING:
+            result = should_forward(message)
+            if result:
+                guild_id, channel_id = result.split("#")
+                guild = self.get_guild(int(guild_id))
+                channel = guild.get_channel(int(channel_id))
+                if message.content:
+                    await channel.send(message.content)
+                else:
+                    await channel.send(embeds=message.embeds)
+
         app = get_app(message)
         logger.debug(f"App: {app}")
         if app is not None:
@@ -123,7 +134,6 @@ class Core(discord.Client):
         )
 
     async def on_scheduled_event_delete(self, event):
-        self._reload_config()
         guild_id = str(event.guild.id)
         cancel_cfd(f"{BOT_SERVERS_DB_PATH}{guild_id}.db", event.id)
 
