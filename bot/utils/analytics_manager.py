@@ -1,6 +1,4 @@
 import sqlite3
-from datetime import datetime
-import time
 from typing import Optional, Dict, List
 from utils.logger import logger
 from utils.constants import ANALYTICS_DB_PATH
