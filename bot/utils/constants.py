@@ -40,7 +40,7 @@ MAP_MIN = -200
 
 BOT_SERVERS_DB_PATH = "../databases/bot_servers/"
 GAME_SERVERS_DB_PATH = "../databases/game_servers/"
-ANALYTICS_DB_PATH = "../databases/analytics.db"
+ANALYTICS_DB_PATH = "../databases/analytics/analytics.db"
 
 pytest_id = 1234
 ci_cd_id = 1312198246059348030

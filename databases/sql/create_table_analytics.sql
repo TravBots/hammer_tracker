@@ -3,6 +3,7 @@ CREATE TABLE IF NOT EXISTS ANALYTICS(
     app TEXT NOT NULL,
     full_command TEXT NOT NULL,
     discord_user_id INTEGER NOT NULL,
+    discord_user_name TEXT NOT NULL,
     discord_server_id INTEGER NOT NULL,
     server_name TEXT NOT NULL,
     timestamp TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,

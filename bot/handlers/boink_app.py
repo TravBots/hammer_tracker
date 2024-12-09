@@ -225,8 +225,11 @@ class BoinkApp(BaseApp):
                 embed.add_field(name="Success", value="Alerts enabled")
                 await message.channel.send(embed=embed)
 
-    @is_dev_or_user_or_admin_privs
+    @is_dev_or_admin_privs
     async def stats(self, params, message):
+        # Stats command is for testing only
+        raise Exception("Stats command disabled")
+
         analytics = AnalyticsManager()
         stats = analytics.get_command_stats()
         await message.channel.send(content=str(stats))

@@ -70,6 +70,7 @@ class Core(discord.Client):
                 app=message.content.split()[0].strip(PREFIX),
                 full_command=message.content,
                 discord_user_id=message.author.id,
+                discord_user_name=message.author.display_name,
                 discord_server_id=message.guild.id,
                 server_name=read_config_str(
                     message.guild.id, ConfigKeys.GAME_SERVER, ""

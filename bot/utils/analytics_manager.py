@@ -5,48 +5,18 @@ from utils.constants import ANALYTICS_DB_PATH
 
 
 class AnalyticsManager:
-    _instance = None
-    _initialized = False
-
-    def __new__(cls):
-        if cls._instance is None:
-            cls._instance = super().__new__(cls)
-        return cls._instance
+    """Class to manage analytics data across all Discord servers"""
 
     def __init__(self):
-        if not self._initialized:
-            self.db_path = ANALYTICS_DB_PATH
-            self._initialize_db()
-            self._initialized = True
-            self._connection_cache: Dict[int, float] = {}
-            self._conn = None
-            logger.info("Analytics Manager initialized")
-
-    def _initialize_db(self) -> None:
-        """Initialize the analytics database"""
-        try:
-            with open("sql/create_table_analytics.sql", "r") as f:
-                create_table_sql = f.read()
-
-            with sqlite3.connect(self.db_path) as conn:
-                conn.execute(create_table_sql)
-                conn.commit()
-        except Exception as e:
-            logger.error(f"Failed to initialize analytics database: {e}")
-            raise
-
-    @property
-    def conn(self) -> sqlite3.Connection:
-        """Get a database connection with connection pooling"""
-        if self._conn is None:
-            self._conn = sqlite3.connect(self.db_path)
-        return self._conn
+        self.db_path = ANALYTICS_DB_PATH
+        logger.info("Analytics Manager initialized")
 
     def record_command(
         self,
         app: str,
         full_command: str,
         discord_user_id: int,
+        discord_user_name: str,
         discord_server_id: int,
         server_name: str,
         execution_time: Optional[float] = None,
@@ -55,43 +25,35 @@ class AnalyticsManager:
     ) -> None:
         """Record a command interaction in the analytics table"""
         try:
-            # Convert execution_time to integer milliseconds if it exists
             execution_time_ms = (
                 int(execution_time * 1000) if execution_time is not None else None
             )
-
-            # Convert boolean to integer for SQLite
             success_int = 1 if success else 0
 
             query = """
                 INSERT INTO ANALYTICS (
-                    app, full_command, discord_user_id, discord_server_id, server_name,
-                    execution_time_ms, success, error_message
+                    app, full_command, discord_user_id, discord_user_name, discord_server_id, 
+                    server_name, execution_time_ms, success, error_message
                 )
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?);
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?);
             """
-
             data = (
-                str(app),  # Ensure app is string
-                str(full_command),  # Ensure command is string
-                int(discord_user_id),  # Ensure user_id is integer
-                int(discord_server_id),  # Ensure server_id is integer
-                str(server_name),  # Ensure server_name is string
-                execution_time_ms,  # Integer or None
-                success_int,  # Integer (0 or 1)
-                (
-                    str(error_message) if error_message is not None else None
-                ),  # String or None
+                app,
+                full_command,
+                discord_user_id,
+                discord_user_name,
+                discord_server_id,
+                server_name,
+                execution_time_ms,
+                success_int,
+                error_message,
             )
 
-            with self.conn as conn:
+            with sqlite3.connect(self.db_path) as conn:
                 conn.execute(query, data)
             logger.info(f"Recorded analytics for command: {full_command}")
         except Exception as e:
             logger.error(f"Failed to record analytics: {e}")
-            logger.error(
-                f"Failed data: app: {app}, full_command: {full_command}, discord_user_id: {discord_user_id}, discord_server_id: {discord_server_id}, server_name: {server_name}, execution_time: {execution_time}, success: {success}, error_message: {error_message}"
-            )
 
     def get_command_stats(
         self, days: int = 7, server_id: Optional[int] = None
@@ -115,17 +77,14 @@ class AnalyticsManager:
             """
 
             params = [f"-{days} days"]
-            server_filter = ""
-
+            server_filter = "AND discord_server_id = ?" if server_id else ""
             if server_id:
-                server_filter = "AND server_id = ?"
                 params.append(server_id)
 
             query = base_query.format(server_filter=server_filter)
 
-            with self.conn as conn:
-                rows = conn.execute(query, params)
-
+            with sqlite3.connect(self.db_path) as conn:
+                rows = conn.execute(query, params).fetchall()
                 return [
                     {
                         "app": row[0],
@@ -154,15 +113,14 @@ class AnalyticsManager:
                     AVG(execution_time_ms) as avg_execution_time,
                     COUNT(DISTINCT discord_server_id) as server_count
                 FROM ANALYTICS 
-                WHERE user_id = ?
+                WHERE discord_user_id = ?
                 AND timestamp >= datetime('now', ?, 'localtime')
                 GROUP BY app, full_command
                 ORDER BY total_uses DESC;
             """
 
-            with self.conn as conn:
-                rows = conn.execute(query, (user_id, f"-{days} days"))
-
+            with sqlite3.connect(self.db_path) as conn:
+                rows = conn.execute(query, (user_id, f"-{days} days")).fetchall()
                 return [
                     {
                         "app": row[0],
@@ -189,13 +147,12 @@ class AnalyticsManager:
                     AVG(execution_time_ms) as avg_execution_time,
                     SUM(CASE WHEN success = 1 THEN 1 ELSE 0 END) as successful_commands
                 FROM ANALYTICS 
-                WHERE server_id = ?
+                WHERE discord_server_id = ?
                 AND timestamp >= datetime('now', ?, 'localtime');
             """
 
-            with self.conn as conn:
+            with sqlite3.connect(self.db_path) as conn:
                 row = conn.execute(query, (server_id, f"-{days} days")).fetchone()
-
                 return {
                     "total_commands": row[0],
                     "unique_users": row[1],

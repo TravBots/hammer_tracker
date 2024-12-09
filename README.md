@@ -62,7 +62,20 @@ A Discord bot and web dashboard for tracking and analyzing Travian game data. Th
 ./setup.sh YOUR_DISCORD_BOT_TOKEN
 ```
 
-3. Create virtual environment and install dependencies:
+3. Initialize the databases:
+
+```bash
+# This will:
+# -- Initialize the analytics database
+# -- Set up all required tables
+# -- Create necessary views
+
+cd databases
+python manage.py init-analytics
+python manage.py refresh-views
+```
+
+4. Create virtual environment and install dependencies:
 
 ```bash
 # This will:
