@@ -33,7 +33,7 @@ format: $(VENV)
 	@$(BIN)/python -m ruff format
 
 test: $(VENV)
-	@$(BIN)/python -m pytest test/
+	@$(BIN)/python -m pytest test/ -v -s --log-cli-level=DEBUG
 
 clean:
 	@rm -rf env/ .ruff_cache/ \

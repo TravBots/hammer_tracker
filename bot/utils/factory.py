@@ -21,7 +21,7 @@ def _is_bot_message(message: discord.Message) -> bool:
 
 
 def get_app(message) -> BaseApp:
-    logger.info(
+    logger.debug(
         f"Message received: {message.content}; author isBot?: {message.author.bot}; webhook_id: {message.webhook_id}; author id: {message.author.id}"
     )
     # Ignore messages sent by bots; let webhooks pass through for ci/cd

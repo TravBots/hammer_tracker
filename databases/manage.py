@@ -13,6 +13,14 @@ def _get_dbs() -> list:
     return glob.glob("game_servers/*.db")
 
 
+def _get_bot_servers() -> list:
+    return glob.glob("bot_servers/*.db")
+
+
+def _get_scripts() -> list:
+    return sorted(glob.glob("scripts/*.sql"))
+
+
 @click.group()
 def manage():
     pass
@@ -65,6 +73,36 @@ def copy_prod_db(username):
     print(f"Running command: {command}")
     os.system(command)
     print("Copy completed successfully!")
+
+
+@manage.command(help="Execute a specific database script")
+@click.argument("script_name")
+def execute_script(script_name):
+    dbs = _get_bot_servers()
+    script_path = f"scripts/{script_name}"
+
+    if not os.path.exists(script_path):
+        print(f"Error: Script {script_path} not found")
+        return
+
+    print(f"Executing script {script_name}...")
+
+    for db in dbs:
+        print(f"Processing database: {db}")
+        cnx = sqlite3.connect(db)
+
+        try:
+            with open(script_path, "r") as script_file:
+                print(f"Executing script on {db}")
+                cnx.executescript(script_file.read())
+                print(f"Script executed successfully on {db}")
+        except sqlite3.Error as e:
+            print(f"Error executing script on {db}: {e}")
+            cnx.rollback()
+        finally:
+            cnx.close()
+
+    return
 
 
 if __name__ == "__main__":

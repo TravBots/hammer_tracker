@@ -33,35 +33,41 @@ class TrackerApp(BaseApp):
             response = incorrect_roles_error([str(e)])
             await self.message.channel.send(embed=response)
 
-    @is_dev_or_admin_privs
+    @is_dev_or_user_or_admin_privs
     async def add(self, params):
-        validated = validate_add_input(params)
-        if validated:
-            try:
-                self.DB = read_config_str(self.guild_id, "database", "")
-            except KeyError:
-                response = no_db_error()
-                await self.message.channel.send(embed=response)
-                return
+        logger.info(f"Params: {params}")
 
-            logger.info(f"Params: {params}")
-            coordinates = params.pop()
-            coordinates = coordinates.replace("/", "|")
-            logger.info(f"Coordinates: {coordinates}")
+        self.DB = read_config_str(self.guild_id, "database", "")
+        description = []
+        url = None
+        coords = None
+        notes = []
 
-            logger.info(f"Params: {params}")
-            link = params.pop()
+        # Iterate through params
+        for i, param in enumerate(params):
+            # If we haven't found the URL yet
+            if not url:
+                if url_is_valid(param):
+                    url = param
+                    # If there's a next parameter, it's coords
+                    if i + 1 < len(params):
+                        coords = params[i + 1]
+                        # Collect remaining params as notes
+                        notes = " ".join(params[i + 2 :])
+                    break
+                else:
+                    description.append(param)
 
-            ign = params
-            ign = " ".join(ign).lower()
+        # Join collected description strings
+        description = " ".join(description)
 
-            unique = validate_unique_url(self.DB, link, ign)
-            if unique:
-                response = add_report(self.DB, ign, link, coordinates)
-            else:
-                response = not_unique_error()
+        unique = validate_unique_url(self.DB, url, description)
+        logger.info(f"IGN: {description}, URL: {url}, COORDS: {coords}, NOTES: {notes}")
+        if unique:
+            response = add_report(self.DB, description, url, coords, notes)
         else:
-            response = invalid_input_error()
+            response = not_unique_error()
+
         await self.message.channel.send(embed=response)
 
     @is_dev_or_user_or_admin_privs
