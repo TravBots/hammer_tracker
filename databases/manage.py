@@ -77,9 +77,9 @@ def copy_prod_db(username):
 
 @manage.command(help="Execute a specific database script")
 @click.argument("script_name")
-def execute_script(script_name):
+def execute_migration(script_name):
     dbs = _get_bot_servers()
-    script_path = f"scripts/{script_name}"
+    script_path = f"migrations/{script_name}"
 
     if not os.path.exists(script_path):
         print(f"Error: Script {script_path} not found")
