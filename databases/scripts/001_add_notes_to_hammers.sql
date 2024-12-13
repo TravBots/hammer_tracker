@@ -1,0 +1,6 @@
+BEGIN TRANSACTION;
+
+-- Add NOTES column if it doesn't exist
+ALTER TABLE HAMMERS ADD COLUMN NOTES TEXT;
+
+COMMIT; 
