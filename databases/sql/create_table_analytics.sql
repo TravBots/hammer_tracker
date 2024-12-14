@@ -5,8 +5,9 @@ CREATE TABLE IF NOT EXISTS ANALYTICS(
     discord_user_id INTEGER NOT NULL,
     discord_user_name TEXT NOT NULL,
     discord_server_id INTEGER NOT NULL,
-    server_name TEXT NOT NULL,
-    timestamp TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    discord_server_name TEXT NOT NULL,
+    travian_server_code TEXT NOT NULL,
+    recorded_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     success BOOLEAN NOT NULL DEFAULT TRUE,
     error_message TEXT,
     execution_time_ms INTEGER

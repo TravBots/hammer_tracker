@@ -18,7 +18,8 @@ class AnalyticsManager:
         discord_user_id: int,
         discord_user_name: str,
         discord_server_id: int,
-        server_name: str,
+        discord_server_name: str,
+        travian_server_code: str,
         execution_time: Optional[float] = None,
         success: bool = True,
         error_message: Optional[str] = None,
@@ -32,10 +33,10 @@ class AnalyticsManager:
 
             query = """
                 INSERT INTO ANALYTICS (
-                    app, full_command, discord_user_id, discord_user_name, discord_server_id, 
-                    server_name, execution_time_ms, success, error_message
+                    app, full_command, discord_user_id, discord_user_name, discord_server_id, discord_server_name, travian_server_code,
+                    execution_time_ms, success, error_message
                 )
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?);
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
             """
             data = (
                 app,
@@ -43,7 +44,8 @@ class AnalyticsManager:
                 discord_user_id,
                 discord_user_name,
                 discord_server_id,
-                server_name,
+                discord_server_name,
+                travian_server_code,
                 execution_time_ms,
                 success_int,
                 error_message,
@@ -70,7 +72,7 @@ class AnalyticsManager:
                     AVG(execution_time_ms) as avg_execution_time,
                     COUNT(DISTINCT discord_server_id) as server_count
                 FROM ANALYTICS 
-                WHERE timestamp >= datetime('now', ?, 'localtime')
+                WHERE recorded_at >= datetime('now', ?, 'localtime')
                 {server_filter}
                 GROUP BY app, full_command
                 ORDER BY total_uses DESC;
@@ -114,7 +116,7 @@ class AnalyticsManager:
                     COUNT(DISTINCT discord_server_id) as server_count
                 FROM ANALYTICS 
                 WHERE discord_user_id = ?
-                AND timestamp >= datetime('now', ?, 'localtime')
+                AND recorded_at >= datetime('now', ?, 'localtime')
                 GROUP BY app, full_command
                 ORDER BY total_uses DESC;
             """
@@ -148,7 +150,7 @@ class AnalyticsManager:
                     SUM(CASE WHEN success = 1 THEN 1 ELSE 0 END) as successful_commands
                 FROM ANALYTICS 
                 WHERE discord_server_id = ?
-                AND timestamp >= datetime('now', ?, 'localtime');
+                AND recorded_at >= datetime('now', ?, 'localtime');
             """
 
             with sqlite3.connect(self.db_path) as conn:

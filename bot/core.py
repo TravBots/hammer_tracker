@@ -72,7 +72,8 @@ class Core(discord.Client):
                 discord_user_id=message.author.id,
                 discord_user_name=message.author.display_name,
                 discord_server_id=message.guild.id,
-                server_name=read_config_str(
+                discord_server_name=message.guild.name,
+                travian_server_code=read_config_str(
                     message.guild.id, ConfigKeys.GAME_SERVER, ""
                 ),
             )
