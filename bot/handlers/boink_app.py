@@ -1,5 +1,6 @@
 import sqlite3
 import traceback
+from utils.analytics_manager import AnalyticsManager
 import discord
 import pandas as pd
 from funcs import (
@@ -41,6 +42,8 @@ class BoinkApp(BaseApp):
                 await self.search(self.params, self.message)
             elif self.keyword == "alerts":
                 await self.alerts(self.params, self.message)
+            elif self.keyword == "stats":
+                await self.stats(self.params, self.message)
             else:
                 logger.error(
                     f"{self.keyword} is not a valid command for {self.__class__.__name__}"
@@ -221,3 +224,12 @@ class BoinkApp(BaseApp):
                 embed = discord.Embed(color=Colors.SUCCESS)
                 embed.add_field(name="Success", value="Alerts enabled")
                 await message.channel.send(embed=embed)
+
+    @is_dev_or_admin_privs
+    async def stats(self, params, message):
+        # Stats command is for testing only
+        raise Exception("Stats command disabled")
+
+        analytics = AnalyticsManager()
+        stats = analytics.get_command_stats()
+        await message.channel.send(content=str(stats))

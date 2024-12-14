@@ -6,7 +6,7 @@ import string
 import discord
 from discord import app_commands
 from discord.ext import tasks
-from utils.factory import get_app
+from utils.factory import PREFIX, get_app
 from funcs import (
     cancel_cfd,
     create_cfd,
@@ -15,6 +15,7 @@ from funcs import (
     get_connection_path,
     insert_defense_thread,
 )
+from utils.analytics_manager import AnalyticsManager
 from utils.constants import ALLOW_FORWARDING, BOT_SERVERS_DB_PATH, Colors, ConfigKeys
 from utils.logger import logger, periodic_log_check
 from utils.validators import coordinates_are_valid, should_forward
@@ -36,6 +37,7 @@ class Core(discord.Client):
         super().__init__(intents=intents, **options)
         self.tree = app_commands.CommandTree(self)
         self.token = read_config_str(ConfigKeys.DEFAULT, ConfigKeys.TOKEN, "")
+        self.analytics = AnalyticsManager()
 
     async def setup_hook(self):
         # Add the commands directly
@@ -64,6 +66,17 @@ class Core(discord.Client):
         app = get_app(message)
         logger.debug(f"App: {app}")
         if app is not None:
+            self.analytics.record_command(
+                app=message.content.split()[0].strip(PREFIX),
+                full_command=message.content,
+                discord_user_id=message.author.id,
+                discord_user_name=message.author.display_name,
+                discord_server_id=message.guild.id,
+                discord_server_name=message.guild.name,
+                travian_server_code=read_config_str(
+                    message.guild.id, ConfigKeys.GAME_SERVER, ""
+                ),
+            )
             await app.run()
             return
 

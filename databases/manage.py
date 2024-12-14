@@ -75,6 +75,32 @@ def copy_prod_db(username):
     print("Copy completed successfully!")
 
 
+
+@manage.command(help="Initialize analytics database")
+def init_analytics():
+    """Initialize the analytics database"""
+    print("Initializing analytics database...")
+
+    analytics_path = Path("analytics")
+    if not analytics_path.exists():
+        print("Creating analytics directory")
+        analytics_path.mkdir(parents=True, exist_ok=True)
+
+    db_path = analytics_path / "analytics.db"
+
+    try:
+        with open("sql/create_table_analytics.sql", "r") as f:
+            create_table_sql = f.read()
+
+        print(f"Creating analytics database at {db_path}")
+        with sqlite3.connect(db_path) as conn:
+            conn.executescript(create_table_sql)
+            conn.commit()
+        print("Analytics database initialized successfully")
+    except Exception as e:
+        print(f"Failed to initialize analytics database: {e}")
+        raise
+
 @manage.command(help="Execute a specific database script")
 @click.argument("script_name")
 def execute_migration(script_name):

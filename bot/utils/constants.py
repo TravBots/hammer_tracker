@@ -39,6 +39,7 @@ MAP_MIN = -200
 
 BOT_SERVERS_DB_PATH = "../databases/bot_servers/"
 GAME_SERVERS_DB_PATH = "../databases/game_servers/"
+ANALYTICS_DB_PATH = "../databases/analytics/analytics.db"
 
 URL_PATTERN = (
     "http[s]?://(?:[a-zA-Z]|[0-9]|[$-_@.&+]|[!*\\(\\),]|(?:%[0-9a-fA-F][0-9a-fA-F]))+"
