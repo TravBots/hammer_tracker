@@ -26,26 +26,6 @@ class TestValidators:
         # assert url_is_valid("https://www") is False
         assert not url_is_valid("not a url")
 
-    def test_validate_add_input(self):
-        valid_params = ["praxis", "https://www.example.com", "55/55"]
-        multi_part_ign = [
-            "Here",
-            "We",
-            "Go",
-            "Again",
-            "https://www.example.com",
-            "55/55",
-        ]
-        invalid_url_multi_part_ign = ["Here", "We", "Go", "Again", "not a url", "55/55"]
-        invalid_url = ["praxis", "not a url", "55/55"]
-        invalid_coordinates = ["praxis", "https://www.example.com", "ab/cd"]
-
-        assert validate_add_input(valid_params)
-        assert validate_add_input(multi_part_ign)
-        assert not validate_add_input(invalid_url)
-        assert not validate_add_input(invalid_coordinates)
-        assert not validate_add_input(invalid_url_multi_part_ign)
-
     def test_is_dev(self):
         MESSAGE_1 = build_mock_message(
             content="!boink keyword some text here", id=177473204011401216

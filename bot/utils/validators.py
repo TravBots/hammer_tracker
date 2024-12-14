@@ -65,34 +65,6 @@ def validate_unique_url(db_name, url, ign) -> bool:
     return unique
 
 
-def validate_add_input(params: List[str]) -> bool:
-    """
-    Add input is very specific. It should be a list of string values, defined as:
-    [
-        ign_part_1: str,
-        ign_part_2: str,
-        url: str,
-        coordinates: str
-    ]
-    where `coordinates` are a string such as `1|2` or `1/2`. Note that an IGN
-    can have multiple parts. This is the result of a multi-word IGN, such as
-    `Here We Go Again`
-    We'll use multiple individual validators bundled into this one convenience method
-    """
-    logger.info(f"Validating {params}")
-
-    coordinates = params[-1]
-    url = params[-2]
-
-    if not coordinates_are_valid(coordinates):
-        return False
-
-    if not url_is_valid(url):
-        return False
-
-    return True
-
-
 def validate_role_exists(guild: discord.Guild, role):
     logger.info(f"Validating {role}")
     try:

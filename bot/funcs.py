@@ -44,11 +44,15 @@ def execute_sql(db_name, sql):
     conn.close()
 
 
-def add_report(db_name, ign, link, coordinates):
+def add_report(db_name, ign, link, coordinates, notes=None):
     conn = sqlite3.connect(db_name)
 
-    query = "INSERT INTO HAMMERS (IGN,LINK,TIMESTAMP, COORDINATES) VALUES (?, ?, CURRENT_TIMESTAMP, ?);"
-    data = (ign, link, coordinates)
+    if notes:
+        query = "INSERT INTO HAMMERS (IGN,LINK,TIMESTAMP,COORDINATES,NOTES) VALUES (?, ?, CURRENT_TIMESTAMP, ?, ?);"
+        data = (ign, link, coordinates, notes)
+    else:
+        query = "INSERT INTO HAMMERS (IGN,LINK,TIMESTAMP,COORDINATES) VALUES (?, ?, CURRENT_TIMESTAMP, ?);"
+        data = (ign, link, coordinates)
 
     conn.execute(query, data)
     conn.commit()
@@ -65,7 +69,7 @@ def add_report(db_name, ign, link, coordinates):
 def get_reports(db_name, ign, game_server, count="1"):
     conn = sqlite3.connect(db_name)
     query = conn.execute(
-        """select ID, IGN, LINK, COORDINATES, datetime(TIMESTAMP, '-4 hours') from hammers where lower(ign) = ? order by timestamp limit ?;""",
+        """select ID, IGN, LINK, COORDINATES, datetime(TIMESTAMP), NOTES from hammers where lower(ign) = ? order by timestamp limit ?;""",
         (ign.lower(), count),
     )
 
@@ -79,10 +83,13 @@ def get_reports(db_name, ign, game_server, count="1"):
         x, y = split_coordinates[0], split_coordinates[1]
         map_link = f"[{x}|{y}]({game_server}/position_details.php?x={x}&y={y})"
         timestamp = row[4]
+        notes = row[5]
 
-        response += "\nID: {} \nReport: {} \nCoordinates: {} \nTimestamp: {}\n".format(
+        response += "\nID: {} \nReport: {} \nCoordinates: {} \nTimestamp: {}".format(
             id, link, map_link, timestamp
         )
+        if notes:
+            response += f"\nNote: {notes}"
 
     if response != "":
         embed = discord.Embed(
@@ -106,9 +113,10 @@ def get_reports(db_name, ign, game_server, count="1"):
 def get_one_report(db_name, ign, game_server):
     conn = sqlite3.connect(db_name)
     query = conn.execute(
-        """select ID, IGN, LINK, COORDINATES, datetime(TIMESTAMP, '-4 hours') from hammers where lower(ign) = ? order by timestamp desc limit 1;""",
+        """select ID, IGN, LINK, COORDINATES, datetime(TIMESTAMP), NOTES from hammers where lower(ign) = ? order by timestamp desc limit 1;""",
         (ign.lower(),),
     )
+    logger.debug(f"Query: {query}")
 
     response = ""
     for row in query:
@@ -120,10 +128,15 @@ def get_one_report(db_name, ign, game_server):
         x, y = split_coordinates[0], split_coordinates[1]
         map_link = f"[{x}|{y}]({game_server}/position_details.php?x={x}&y={y})"
         timestamp = row[4]
-        response += "ID: {} \nReport: {} \nCoordinates: {} \nTimestamp: {}\n".format(
+        notes = row[5]
+
+        response += "ID: {} \nReport: {} \nCoordinates: {} \nTimestamp: {}".format(
             id, link, map_link, timestamp
         )
+        if notes:
+            response += f"\nNote: {notes}"
 
+    logger.debug(f"Final Response: {response}")
     if response != "":
         embed = discord.Embed(
             title="Latest report for player {}".format(ign), color=Colors.SUCCESS
@@ -194,7 +207,7 @@ def list_all_names(db_name):
 
 
 def give_help():
-    embed = discord.Embed(description="Help", color=Colors.SUCCESS)
+    embed = discord.Embed(description="Help", color=Colors.ERROR)
     embed.add_field(
         name="List IGNs in Database [Tracker User]", value="`!tracker list all`"
     )
@@ -204,7 +217,7 @@ def give_help():
     )
     embed.add_field(
         name="Add a Report [Tracker Admin]",
-        value="`!tracker add <IGN> <LINK> <COORDINATES>`",
+        value="`!tracker add <IGN> <LINK> <COORDINATES> [NOTES]`",
     )
     embed.add_field(
         name="Delete a Report [Tracker Admin]",

@@ -1,0 +1,5 @@
+# Database Migration Changelog
+
+## [001] - 2024-12-12
+### Added
+- Added NOTES column (TEXT) to HAMMERS table 
