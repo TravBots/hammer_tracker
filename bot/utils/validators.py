@@ -43,26 +43,15 @@ def url_is_valid(url: str):
 
 
 def validate_unique_url(db_name, url, ign) -> bool:
-    conn = sqlite3.connect(db_name)
-
-    query = "SELECT LINK FROM HAMMERS WHERE IGN = ?;"
-    data = (ign,)
-
-    data = conn.execute(query, data)
-
-    urls = []
-
-    for row in data:
-        urls.append(row[0])
-
-    conn.close()
-
-    if url in urls:
-        unique = False
-    else:
-        unique = True
-
-    return unique
+    try:
+        with sqlite3.connect(db_name) as conn:
+            query = "SELECT LINK FROM HAMMERS WHERE IGN = ?;"
+            urls = [row[0] for row in conn.execute(query, (ign,))]
+            logger.info(f"Found URLs for {ign}: {urls}")
+            return url not in urls
+    except sqlite3.Error as e:
+        logger.error(f"Database error while validating URL: {e}")
+        return False
 
 
 def validate_role_exists(guild: discord.Guild, role):

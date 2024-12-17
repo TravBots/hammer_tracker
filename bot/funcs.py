@@ -44,28 +44,6 @@ def execute_sql(db_name, sql):
     conn.close()
 
 
-def add_report(db_name, ign, link, coordinates, notes=None):
-    conn = sqlite3.connect(db_name)
-
-    if notes:
-        query = "INSERT INTO HAMMERS (IGN,LINK,TIMESTAMP,COORDINATES,NOTES) VALUES (?, ?, CURRENT_TIMESTAMP, ?, ?);"
-        data = (ign, link, coordinates, notes)
-    else:
-        query = "INSERT INTO HAMMERS (IGN,LINK,TIMESTAMP,COORDINATES) VALUES (?, ?, CURRENT_TIMESTAMP, ?);"
-        data = (ign, link, coordinates)
-
-    conn.execute(query, data)
-    conn.commit()
-    conn.close()
-
-    embed = discord.Embed(color=Colors.SUCCESS)
-    embed.add_field(
-        name="Success", value="Report for player {} added to database".format(ign)
-    )
-
-    return embed
-
-
 def get_reports(db_name, ign, game_server, count="1"):
     conn = sqlite3.connect(db_name)
     query = conn.execute(

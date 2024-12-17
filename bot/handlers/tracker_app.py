@@ -30,6 +30,7 @@ class TrackerApp(BaseApp):
                 )
                 await self.help()
         except Exception as e:
+            logger.error(f"Error in TrackerApp: {e}")
             response = incorrect_roles_error([str(e)])
             await self.message.channel.send(embed=response)
 
@@ -60,13 +61,50 @@ class TrackerApp(BaseApp):
 
         # Join collected description strings
         description = " ".join(description)
+        logger.debug(
+            f"IGN: {description}, URL: {url}, COORDS: {coords}, NOTES: {notes}"
+        )
 
-        unique = validate_unique_url(self.DB, url, description)
-        logger.info(f"IGN: {description}, URL: {url}, COORDS: {coords}, NOTES: {notes}")
-        if unique:
-            response = add_report(self.DB, description, url, coords, notes)
+        if not coordinates_are_valid(coords):
+            response = discord.Embed(color=Colors.ERROR)
+            response.add_field(
+                name="Error",
+                value="Invalid coordinates, please use the format x|y",
+            )
+            await self.message.channel.send(embed=response)
+            return
+
+        if validate_unique_url(self.DB, url, description):
+            # Build query and data tuple based on whether notes are provided
+            base_query = "INSERT INTO HAMMERS (IGN, LINK, TIMESTAMP, COORDINATES{}) VALUES (?, ?, CURRENT_TIMESTAMP, ?{});"
+            notes_part = ", NOTES" if notes else ""
+            notes_placeholder = ", ?" if notes else ""
+            query = base_query.format(notes_part, notes_placeholder)
+            data = (
+                (description, url, coords, notes)
+                if notes
+                else (description, url, coords)
+            )
+            logger.info(f"Query: {query}, Data: {data}")
+
+            # Execute database operation
+            with sqlite3.connect(self.DB) as conn:
+                conn.execute(query, data)
+                conn.commit()
+
+            # Create response embed
+            response = discord.Embed(color=Colors.SUCCESS)
+            response.add_field(
+                name="Success",
+                value=f"Report for player {description} added to database",
+            )
         else:
-            response = not_unique_error()
+            logger.info(f"URL: {url} is not unique")
+            response = discord.Embed(color=Colors.ERROR)
+            response.add_field(
+                name="Error",
+                value="URL is not unique, please use a different URL",
+            )
 
         await self.message.channel.send(embed=response)
 
