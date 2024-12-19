@@ -1,23 +1,30 @@
 import discord
 import re
 import sqlite3
-
-from typing import List
+import traceback
 
 from utils.constants import dev_ids, pytest_id, MAP_MAX, MAP_MIN, FORWARDING_MAP
 from utils.logger import logger
 
 
 def coordinates_are_valid(coordinates: str, ignore_24_7: bool = False) -> bool:
-    slash = "/" in coordinates
-    pipe = "|" in coordinates
+    # Remove all RTL control characters
+    pattern = r"[\u202A-\u202E]"
+    clean_coords = re.sub(pattern, "", coordinates)
+    clean_coords = clean_coords.replace("−", "-")
+    logger.info(f"Coordinates after removing RTL characters: {clean_coords}")
+
+    slash = "/" in clean_coords
+    pipe = "|" in clean_coords
 
     if slash:
-        xy = coordinates.split("/")
+        xy = clean_coords.split("/")
     elif pipe:
-        xy = coordinates.split("|")
+        xy = clean_coords.split("|")
     else:
         return False
+
+    logger.debug(f"XY: {xy}; length: {len(xy)}")
 
     if len(xy) != 2:
         return False
@@ -25,12 +32,15 @@ def coordinates_are_valid(coordinates: str, ignore_24_7: bool = False) -> bool:
     try:
         x = int(xy[0])
         y = int(xy[1])
+        logger.debug(f"X: {x}; Y: {y}")
         if x > MAP_MAX or y > MAP_MAX or x < MAP_MIN or y < MAP_MIN:
             return False
         if ignore_24_7 and x == 24 and y == 7:
             return False
         return True
-    except ValueError:
+    except ValueError as e:
+        logger.error(f"Error: {e}")
+        logger.error(f"Traceback: {traceback.format_exc()}")
         return False
 
 
