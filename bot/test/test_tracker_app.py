@@ -34,6 +34,31 @@ class TestTrackerApp:
         assert sent_embed.color.value == Colors.SUCCESS
 
     @pytest.mark.asyncio
+    async def test_add_command_invalid_coords(self, mock_message, mock_core):
+        # Arrange
+        mock_message.content = "!tracker add PlayerName https://example.com/report invalid|coords Test notes"
+        mock_message.channel.send = AsyncMock()
+        mock_message.author.id = pytest_id
+        mock_message.guild.id = 1234
+
+        # Add required config values
+        update_config(str(mock_message.guild.id), "database", MOCK_DB)
+
+        # Mock database connection
+        with patch("sqlite3.connect") as mock_connect:
+            mock_cursor = MagicMock()
+            mock_connect.return_value.cursor.return_value = mock_cursor
+            mock_cursor.fetchall.return_value = []
+
+            # Act
+            await mock_core.on_message(mock_message)
+
+        # Assert
+        mock_message.channel.send.assert_called_once()
+        sent_embed = mock_message.channel.send.call_args[1]["embed"]
+        assert sent_embed.color.value == Colors.ERROR
+
+    @pytest.mark.asyncio
     async def test_get_command(self, mock_message, mock_core):
         # Arrange
         mock_message.content = "!tracker get PlayerName"
