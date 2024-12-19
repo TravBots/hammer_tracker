@@ -7,6 +7,7 @@ from utils.printers import *
 from utils.logger import logger
 from funcs import *
 from utils.constants import ConfigKeys
+import traceback
 
 
 class TrackerApp(BaseApp):
@@ -31,6 +32,8 @@ class TrackerApp(BaseApp):
                 await self.help()
         except Exception as e:
             logger.error(f"Error in TrackerApp: {e}")
+            logger.error(f"Stack trace: {traceback.format_exc()}")
+
             response = incorrect_roles_error([str(e)])
             await self.message.channel.send(embed=response)
 
