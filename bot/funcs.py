@@ -61,7 +61,7 @@ def get_reports(db_name, ign, game_server, count="1"):
         x, y = split_coordinates[0], split_coordinates[1]
         map_link = f"[{x}|{y}]({game_server}/position_details.php?x={x}&y={y})"
         timestamp = row[4]
-        notes = row[5]
+        notes = row[5] if len(row) > 5 else ""
 
         response += "\nID: {} \nReport: {} \nCoordinates: {} \nTimestamp: {}".format(
             id, link, map_link, timestamp
@@ -106,7 +106,7 @@ def get_one_report(db_name, ign, game_server):
         x, y = split_coordinates[0], split_coordinates[1]
         map_link = f"[{x}|{y}]({game_server}/position_details.php?x={x}&y={y})"
         timestamp = row[4]
-        notes = row[5]
+        notes = row[5] if len(row) > 5 else ""
 
         response += "ID: {} \nReport: {} \nCoordinates: {} \nTimestamp: {}".format(
             id, link, map_link, timestamp
