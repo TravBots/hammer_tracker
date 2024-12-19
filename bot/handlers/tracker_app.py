@@ -77,6 +77,8 @@ class TrackerApp(BaseApp):
             await self.message.channel.send(embed=response)
             return
 
+        logger.debug("Coordinates are valid")
+
         if validate_unique_url(self.DB, url, description):
             # Build query and data tuple based on whether notes are provided
             base_query = "INSERT INTO HAMMERS (IGN, LINK, TIMESTAMP, COORDINATES{}) VALUES (?, ?, CURRENT_TIMESTAMP, ?{});"
