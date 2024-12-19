@@ -68,7 +68,11 @@ class TrackerApp(BaseApp):
             f"IGN: {description}, URL: {url}, COORDS: {coords}, NOTES: {notes}"
         )
 
-        if not coordinates_are_valid(coords):
+        if coordinates_are_valid(coords):
+            pattern = r"[\u202A-\u202E]"
+            coords = re.sub(pattern, "", coords)
+            coords = coords.replace("−", "-")
+        else:
             response = discord.Embed(color=Colors.ERROR)
             response.add_field(
                 name="Error",
