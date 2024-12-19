@@ -57,8 +57,13 @@ def get_reports(db_name, ign, game_server, count="1"):
         ign = row[1]
         link = row[2]
         coordinates = row[3]
-        split_coordinates = coordinates.split("|")
-        x, y = split_coordinates[0], split_coordinates[1]
+        try:
+            split_coordinates = coordinates.split("|")
+            x, y = split_coordinates[0], split_coordinates[1]
+        except:
+            split_coordinates = coordinates.split("/")
+            x, y = split_coordinates[0], split_coordinates[1]
+
         map_link = f"[{x}|{y}]({game_server}/position_details.php?x={x}&y={y})"
         timestamp = row[4]
         notes = row[5] if len(row) > 5 else ""
@@ -102,8 +107,12 @@ def get_one_report(db_name, ign, game_server):
         ign = row[1]
         link = row[2]
         coordinates = row[3]
-        split_coordinates = coordinates.split("|")
-        x, y = split_coordinates[0], split_coordinates[1]
+        try:
+            split_coordinates = coordinates.split("|")
+            x, y = split_coordinates[0], split_coordinates[1]
+        except:
+            split_coordinates = coordinates.split("/")
+            x, y = split_coordinates[0], split_coordinates[1]
         map_link = f"[{x}|{y}]({game_server}/position_details.php?x={x}&y={y})"
         timestamp = row[4]
         notes = row[5] if len(row) > 5 else ""
