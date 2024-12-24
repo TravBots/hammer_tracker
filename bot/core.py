@@ -243,15 +243,11 @@ class Core(discord.Client):
         logger.info("Running server database alerts")
 
         for guild in self.guilds:
-            try:
-                logger.info(
-                    f"Config for {guild}: {read_config_str(guild.id, ConfigKeys.ALERTS, '0')}"
-                )
-                if read_config_str(guild.id, ConfigKeys.ALERTS, "0") == "1":
-                    await self._send_alerts_for_guild(guild)
-            except KeyError as e:
-                logger.error(f"Failed to check alerts for {guild}")
-                logger.error(e)
+            logger.info(
+                f"Config for {guild}: {read_config_str(guild.id, ConfigKeys.ALERTS, '0')}"
+            )
+            if read_config_str(guild.id, ConfigKeys.ALERTS, "0") == "1":
+                await self._send_alerts_for_guild(guild)
 
 
 if __name__ == "__main__":
