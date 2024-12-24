@@ -1,4 +1,5 @@
 VENV = env
+PYTHON = python3.11
 BIN=$(VENV)/bin
 CONFIG = bot/config.ini
 
@@ -6,7 +7,7 @@ $(VENV):
 	@if [ ! -d env/ ]; then \
 		echo "Creating a virtual environment and installing dependencies..."; \
 	fi;
-	@python -m venv $(VENV)
+	@$(PYTHON) -m venv $(VENV)
 	@$(BIN)/pip install --upgrade -q pip
 	@$(BIN)/pip install -q -r bot/requirements.txt
 	@$(BIN)/pip install -q -r databases/requirements.txt
