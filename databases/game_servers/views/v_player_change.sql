@@ -42,6 +42,7 @@ SELECT
     previous_population,
     (current_villages_count != previous_villages_count) AS villages_changed,
     (COALESCE(current_alliance_id, 'Unspecified') != COALESCE(previous_alliance_id, 'Unspecified')) AS alliance_changed,
-    (current_population - previous_population) AS population_change
+    (current_population - previous_population) AS population_change,
+    (SELECT current_date FROM date_range) AS timestamp
 FROM aggregated_data;
 

@@ -217,12 +217,17 @@ class Core(discord.Client):
         query = "select * from v_player_change where alliance_changed=1"
         rows = conn.execute(query)
         for row in rows:
+            timestamp = datetime.datetime.strptime(row[11], "%Y-%m-%d")
+            if timestamp < datetime.datetime.utcnow() - datetime.timedelta(days=1):
+                logger.info("Skipping all alerts because the data is too old.")
+                return  # all data will be too old in this case
+
             # If a channel exists in the guild that matches the player_name in the result, send an alert
             channel_name = row[1].replace(" ", "-").lower()
             channel_name = channel_name.translate(
                 str.maketrans("", "", string.punctuation)
             )
-            logger.info(f"Checking for channel {channel_name}")
+            logger.debug(f"Checking for channel {channel_name}")
             channel = discord.utils.get(guild.text_channels, name=channel_name)
             if channel is not None:
                 logger.info(f"Found channel {channel}")
