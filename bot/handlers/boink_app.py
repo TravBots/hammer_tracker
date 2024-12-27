@@ -189,7 +189,7 @@ class BoinkApp(BaseApp):
             if not df.empty:
                 link = (
                     f"[View on Travstat](https://www.travstat.com/players/{player_id}) | "
-                    f"[View in-game](" + game_server + "/profile/{player_id})"
+                    f"[View in-game]({game_server}/profile/{player_id})"
                 )
                 embed = discord.Embed(title=player, color=Colors.SUCCESS)
                 embed.description = (
