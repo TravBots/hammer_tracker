@@ -3,24 +3,24 @@ from typing import Optional
 from utils.logger import logger
 
 
-class ConfigManager:
-    _instance: Optional["ConfigManager"] = None
+class ConfigService:
+    _instance: Optional["ConfigService"] = None
     _config: Optional[configparser.ConfigParser] = None
 
     def __init__(self):
-        if ConfigManager._instance is not None:
+        if ConfigService._instance is not None:
             raise Exception(
-                "ConfigManager is a singleton class. Use ConfigManager.get_instance()"
+                "ConfigService is a singleton class. Use ConfigService.get_instance()"
             )
 
-        ConfigManager._instance = self
+        ConfigService._instance = self
         self._config = configparser.ConfigParser()
         self._reload_config()
 
-    def get_instance() -> "ConfigManager":
-        if ConfigManager._instance is None:
-            ConfigManager()
-        return ConfigManager._instance
+    def get_instance() -> "ConfigService":
+        if ConfigService._instance is None:
+            ConfigService()
+        return ConfigService._instance
 
     def _reload_config(self) -> None:
         """Reload the config from disk"""
@@ -61,16 +61,16 @@ class ConfigManager:
         return self._config
 
 
-config_manager = ConfigManager.get_instance()
+config_service = ConfigService.get_instance()
 
 
 def read_config_str(section: str, key: str, default: str = "") -> str:
-    return config_manager.read_config_str(section, key, default)
+    return config_service.read_config_str(section, key, default)
 
 
 def read_config_bool(section: str, key: str, default: bool = False) -> bool:
-    return config_manager.read_config_bool(section, key, default)
+    return config_service.read_config_bool(section, key, default)
 
 
 def update_config(section: str, key: str, value: str) -> bool:
-    return config_manager.update_config(section, key, value)
+    return config_service.update_config(section, key, value)

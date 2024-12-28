@@ -8,7 +8,7 @@ from utils.constants import (
     ConfigKeys,
 )
 from utils.logger import logger
-from utils.config_manager import read_config_str, update_config
+from services.config_service import read_config_str, update_config
 
 
 def init(message):

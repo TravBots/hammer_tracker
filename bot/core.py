@@ -15,13 +15,14 @@ from funcs import (
     get_connection_path,
     insert_defense_thread,
 )
-from utils.analytics_manager import AnalyticsManager
+from services.analytics_service import AnalyticsService
 from utils.constants import ALLOW_FORWARDING, BOT_SERVERS_DB_PATH, Colors, ConfigKeys
 from utils.logger import logger, periodic_log_check
 from utils.validators import coordinates_are_valid, should_forward
 from zoneinfo import ZoneInfo
-from utils.config_manager import read_config_str, read_config_bool
+from services.config_service import read_config_str, read_config_bool
 from commands import COMMAND_LIST
+from services.notification_service import NotificationService
 
 intents = discord.Intents.all()
 intents.message_content = True
@@ -37,7 +38,8 @@ class Core(discord.Client):
         super().__init__(intents=intents, **options)
         self.tree = app_commands.CommandTree(self)
         self.token = read_config_str(ConfigKeys.DEFAULT, ConfigKeys.TOKEN, "")
-        self.analytics = AnalyticsManager()
+        self.analytics = AnalyticsService()
+        self.notifications = NotificationService()
 
     async def setup_hook(self):
         # Add the commands directly
@@ -209,39 +211,6 @@ class Core(discord.Client):
                 logger.error(f"Failed to clean up threads for {guild}")
                 logger.error(e)
 
-    async def _send_alerts_for_guild(self, guild):
-        logger.info(f"Sending alerts for {str(guild.id)}")
-        # Get all players that changed alliances from v_player_change
-        game_server = read_config_str(guild.id, ConfigKeys.GAME_SERVER, "")
-        conn = sqlite3.connect(get_connection_path(game_server))
-        query = "select * from v_player_change where alliance_changed=1"
-        rows = conn.execute(query)
-        for row in rows:
-            timestamp = datetime.datetime.strptime(row[11], "%Y-%m-%d")
-            if timestamp < datetime.datetime.utcnow() - datetime.timedelta(days=1):
-                logger.info("Skipping all alerts because the data is too old.")
-                return  # all data will be too old in this case
-
-            # If a channel exists in the guild that matches the player_name in the result, send an alert
-            channel_name = row[1].replace(" ", "-").lower()
-            channel_name = channel_name.translate(
-                str.maketrans("", "", string.punctuation)
-            )
-            logger.debug(f"Checking for channel {channel_name}")
-            channel = discord.utils.get(guild.text_channels, name=channel_name)
-            if channel is not None:
-                logger.info(f"Found channel {channel}")
-
-                if row[4] == 0:
-                    # Send a message that the player has deleted
-                    await channel.send(f"Player {row[1]} has deleted their account.")
-                else:
-                    # Check if a player has changed tags
-                    await channel.send(
-                        f"Player {row[1]} has changed alliances from "
-                        + f"**{get_alliance_tag_from_id(conn, row[3])}** to **{get_alliance_tag_from_id(conn, row[2])}**"
-                    )
-
     @tasks.loop(hours=24)
     async def run_server_database_alerts(self):
         await self.wait_until_ready()
@@ -253,7 +222,7 @@ class Core(discord.Client):
                     f"Config for {guild}: {read_config_str(guild.id, ConfigKeys.ALERTS, '0')}"
                 )
                 if read_config_str(guild.id, ConfigKeys.ALERTS, "0") == "1":
-                    await self._send_alerts_for_guild(guild)
+                    await self.notifications.send_alerts_for_guild(guild)
             except KeyError as e:
                 logger.error(f"Failed to check alerts for {guild}")
                 logger.error(e)

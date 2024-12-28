@@ -2,7 +2,7 @@ from typing import List
 import discord
 
 from utils.constants import BOT_SERVERS_DB_PATH, ConfigKeys
-from utils.config_manager import read_config_str
+from services.config_service import read_config_str
 
 
 class BaseApp:

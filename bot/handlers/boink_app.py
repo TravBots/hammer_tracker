@@ -1,6 +1,6 @@
 import sqlite3
 import traceback
-from utils.analytics_manager import AnalyticsManager
+from services.analytics_service import AnalyticsService
 import discord
 import pandas as pd
 from funcs import (
@@ -21,7 +21,7 @@ from utils.decorators import (
 from utils.errors import incorrect_roles_error, invalid_input_error, no_db_error
 from utils.logger import logger
 from utils.printers import rows_to_piped_strings
-from utils.config_manager import read_config_str, update_config
+from services.config_service import read_config_str, update_config
 from utils.constants import ConfigKeys
 from .base_app import BaseApp
 
@@ -230,6 +230,6 @@ class BoinkApp(BaseApp):
         # Stats command is for testing only
         raise Exception("Stats command disabled")
 
-        analytics = AnalyticsManager()
+        analytics = AnalyticsService()
         stats = analytics.get_command_stats()
         await message.channel.send(content=str(stats))
