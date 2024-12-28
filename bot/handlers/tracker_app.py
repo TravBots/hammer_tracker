@@ -64,15 +64,12 @@ class TrackerApp(BaseApp):
 
         # Join collected description strings
         description = " ".join(description)
+        coords = preprocess_coordinates(coords)
         logger.debug(
             f"IGN: {description}, URL: {url}, COORDS: {coords}, NOTES: {notes}"
         )
 
-        if coordinates_are_valid(coords):
-            pattern = r"[\u202A-\u202E]"
-            coords = re.sub(pattern, "", coords)
-            coords = coords.replace("−", "-")
-        else:
+        if not coords or not coordinates_are_valid(coords):
             response = discord.Embed(color=Colors.ERROR)
             response.add_field(
                 name="Error",

@@ -19,6 +19,9 @@ class TestValidators:
         assert not coordinates_are_valid("55/55/55")
         assert not coordinates_are_valid("///")
 
+        assert not coordinates_are_valid("−‭44‬‬|‭84")
+        assert coordinates_are_valid(preprocess_coordinates("−‭44‬‬|‭84"))
+
     def test_url_is_valid(self):
         assert url_is_valid("https://www.example.com")
         # Any Discord link will include https

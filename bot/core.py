@@ -18,7 +18,11 @@ from funcs import (
 from utils.analytics_manager import AnalyticsManager
 from utils.constants import ALLOW_FORWARDING, BOT_SERVERS_DB_PATH, Colors, ConfigKeys
 from utils.logger import logger, periodic_log_check
-from utils.validators import coordinates_are_valid, should_forward
+from utils.validators import (
+    coordinates_are_valid,
+    should_forward,
+    preprocess_coordinates,
+)
 from zoneinfo import ZoneInfo
 from utils.config_manager import read_config_str, read_config_bool
 from commands import COMMAND_LIST
@@ -81,6 +85,7 @@ class Core(discord.Client):
             return
 
         last_item = message.content.split(" ")[-1].replace("?", "")
+        last_item = preprocess_coordinates(last_item)
         ignore_24_7 = read_config_bool(message.guild.id, "ignore_24_7", False)
 
         if coordinates_are_valid(last_item, ignore_24_7):

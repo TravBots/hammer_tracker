@@ -8,19 +8,13 @@ from utils.logger import logger
 
 
 def coordinates_are_valid(coordinates: str, ignore_24_7: bool = False) -> bool:
-    # Remove all RTL control characters
-    pattern = r"[\u202A-\u202E]"
-    clean_coords = re.sub(pattern, "", coordinates)
-    clean_coords = clean_coords.replace("−", "-")
-    logger.info(f"Coordinates after removing RTL characters: {clean_coords}")
-
-    slash = "/" in clean_coords
-    pipe = "|" in clean_coords
+    slash = "/" in coordinates
+    pipe = "|" in coordinates
 
     if slash:
-        xy = clean_coords.split("/")
+        xy = coordinates.split("/")
     elif pipe:
-        xy = clean_coords.split("|")
+        xy = coordinates.split("|")
     else:
         return False
 
@@ -101,3 +95,14 @@ def should_forward(message: discord.Message):
     if key in FORWARDING_MAP:
         return FORWARDING_MAP[key]
     return None
+
+
+def preprocess_coordinates(coordinates: str) -> str:
+    pattern = r"[\u202A-\u202E]"
+    clean_coords = re.sub(pattern, "", coordinates)
+    clean_coords = clean_coords.replace("−", "-")
+
+    logger.debug(
+        f"Coordinates after preprocessing: {clean_coords}, from: {coordinates}"
+    )
+    return clean_coords
