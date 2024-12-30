@@ -1,7 +1,7 @@
 import pytest
 from unittest.mock import AsyncMock, MagicMock
 from unittest.mock import patch
-from utils import logger
+from utils.logger import logger
 from utils.constants import Colors, ConfigKeys, pytest_id
 from services.config_service import dump_config, update_config
 

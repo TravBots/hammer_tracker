@@ -2,7 +2,6 @@ import datetime
 import sqlite3
 from typing import Any
 
-import string
 import discord
 from discord import app_commands
 from discord.ext import tasks
@@ -10,9 +9,7 @@ from utils.factory import PREFIX, get_app
 from funcs import (
     cancel_cfd,
     create_cfd,
-    get_alliance_tag_from_id,
     get_channel_from_id,
-    get_connection_path,
     insert_defense_thread,
 )
 from services.analytics_service import AnalyticsService
