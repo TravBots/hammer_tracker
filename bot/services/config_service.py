@@ -60,6 +60,15 @@ class ConfigService:
         """Get the raw ConfigParser object"""
         return self._config
 
+    def dump_config(self) -> dict:
+        """Return a dictionary of all configuration values"""
+        config_dict = {}
+        for section in self._config.sections():
+            config_dict[section] = {}
+            for key, value in self._config.items(section):
+                config_dict[section][key] = value
+        return config_dict
+
 
 config_service = ConfigService.get_instance()
 
@@ -74,3 +83,7 @@ def read_config_bool(section: str, key: str, default: bool = False) -> bool:
 
 def update_config(section: str, key: str, value: str) -> bool:
     return config_service.update_config(section, key, value)
+
+
+def dump_config() -> dict:
+    return config_service.dump_config()

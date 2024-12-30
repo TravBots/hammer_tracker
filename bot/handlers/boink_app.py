@@ -21,7 +21,7 @@ from utils.decorators import (
 from utils.errors import incorrect_roles_error, invalid_input_error, no_db_error
 from utils.logger import logger
 from utils.printers import rows_to_piped_strings
-from services.config_service import read_config_str, update_config
+from services.config_service import dump_config, read_config_str, update_config
 from utils.constants import ConfigKeys
 from .base_app import BaseApp
 
@@ -134,6 +134,8 @@ class BoinkApp(BaseApp):
     @is_dev_or_user_or_admin_privs
     async def search(self, params, message):
         game_server = read_config_str(self.guild_id, ConfigKeys.GAME_SERVER, "")
+
+        logger.debug(f"Config Dump: {dump_config()}")
 
         if game_server == "":
             logger.error(f"No game_server set for {self.guild_id}")

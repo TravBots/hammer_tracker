@@ -1,7 +1,7 @@
 import pytest
 from unittest.mock import AsyncMock, MagicMock
 from unittest.mock import patch
-from utils.constants import Colors, pytest_id
+from utils.constants import Colors, ConfigKeys, pytest_id
 from bot.services.config_service import update_config
 
 MOCK_GAME_SERVER = "https://ts2.x1.america.travian.com"
@@ -67,7 +67,9 @@ class TestBoinkApp:
         mock_message.author.id = pytest_id
 
         # Add game_server to config to prevent that error
-        update_config(str(mock_message.guild.id), "game_server", MOCK_GAME_SERVER)
+        update_config(
+            str(mock_message.guild.id), ConfigKeys.GAME_SERVER, MOCK_GAME_SERVER
+        )
 
         # Mock database connection and cursor
         with patch("sqlite3.connect") as mock_connect:
