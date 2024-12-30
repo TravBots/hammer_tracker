@@ -211,3 +211,51 @@ class TestNotificationService(unittest.TestCase):
 
         # Verify no new alert was sent
         self.channel.send.assert_not_called()
+
+    @patch("bot.services.notification_service.read_config_str")
+    @patch("bot.services.notification_service.get_connection_path")
+    @patch("sqlite3.connect")
+    @patch("bot.services.notification_service.get_alliance_tag_from_id")
+    async def test_alliance_change_messages(
+        self, mock_get_alliance, mock_connect, mock_get_path, mock_config
+    ):
+        # Setup mocks
+        mock_config.return_value = "test_server"
+        mock_get_path.return_value = "test_path"
+        mock_conn = MagicMock(spec=sqlite3.Connection)
+        mock_connect.return_value = mock_conn
+
+        # Create test data template - valid timestamp (today)
+        today = datetime.datetime.utcnow().strftime("%Y-%m-%d")
+        base_data = (1, "Test Player", None, None, 2, 2, 100, 100, 0, 1, 0, today)
+
+        test_cases = [
+            # (current_alliance, old_alliance, expected_message)
+            ("NEW_TAG", None, "Player Test Player joined alliance NEW_TAG."),
+            (None, "OLD_TAG", "Player Test Player left alliance OLD_TAG."),
+            (
+                "NEW_TAG",
+                "OLD_TAG",
+                "Player Test Player has changed alliances from **OLD_TAG** to **NEW_TAG**",
+            ),
+        ]
+
+        for current_alliance, old_alliance, expected_message in test_cases:
+            # Reset mocks
+            self.channel.send.reset_mock()
+            self.channel.history.return_value.flatten.return_value = []
+
+            # Update alliance tag mock returns
+            mock_get_alliance.side_effect = [current_alliance, old_alliance]
+
+            # Update test data with alliance IDs
+            test_data = list(base_data)
+            test_data[2] = "NEW_ID" if current_alliance else None
+            test_data[3] = "OLD_ID" if old_alliance else None
+            mock_conn.execute.return_value = [tuple(test_data)]
+
+            # Execute test
+            await self.service.send_alerts_for_guild(self.guild)
+
+            # Verify correct message was sent
+            self.channel.send.assert_called_once_with(expected_message)

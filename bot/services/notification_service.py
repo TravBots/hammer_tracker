@@ -81,13 +81,20 @@ class NotificationService:
         """Send an alert about player changes to the specified channel"""
         try:
             # Player changed alliances
+            current_alliance = get_alliance_tag_from_id(conn, player_data[2])
             old_alliance = get_alliance_tag_from_id(conn, player_data[3])
-            new_alliance = get_alliance_tag_from_id(conn, player_data[2])
 
-            alert_message = (
-                f"Player {player_data[1]} has changed alliances from "
-                f"**{old_alliance}** to **{new_alliance}**"
-            )
+            if current_alliance is None or current_alliance == "":
+                alert_message = f"Player {player_data[1]} left alliance {old_alliance}."
+            elif old_alliance is None or old_alliance == "":
+                alert_message = (
+                    f"Player {player_data[1]} joined alliance {current_alliance}."
+                )
+            else:
+                alert_message = (
+                    f"Player {player_data[1]} has changed alliances from "
+                    f"**{old_alliance}** to **{current_alliance}**"
+                )
 
             # Check recent message history
             if await self._message_exists(channel, alert_message):
