@@ -1,7 +1,6 @@
 import pytest
 from unittest.mock import AsyncMock, MagicMock
 from unittest.mock import patch
-from utils.logger import logger
 from utils.constants import Colors, ConfigKeys, pytest_id
 from services.config_service import dump_config, update_config
 
@@ -72,10 +71,6 @@ class TestBoinkApp:
         update_config(
             str(mock_message.guild.id), ConfigKeys.GAME_SERVER, MOCK_GAME_SERVER
         )
-        logger.debug(
-            f"Guild ID: {mock_message.guild.id}, Mock Game Server: {MOCK_GAME_SERVER}"
-        )
-        logger.debug(f"Config Dump: {dump_config()}")
 
         # Mock database connection and cursor
         with patch("sqlite3.connect") as mock_connect:
