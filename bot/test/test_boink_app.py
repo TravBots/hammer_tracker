@@ -65,6 +65,7 @@ class TestBoinkApp:
         mock_message.content = "!boink search player_name"
         mock_message.channel.send = AsyncMock()
         mock_message.author.id = pytest_id
+        mock_message.guild.id = 1234
 
         # Add game_server to config to prevent that error
         update_config(
