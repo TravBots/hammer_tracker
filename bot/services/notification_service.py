@@ -36,6 +36,13 @@ class NotificationService:
             logger.info(f"Found channel {channel}")
         return channel
 
+    async def _message_exists(
+        self, channel: discord.TextChannel, message_content: str
+    ) -> bool:
+        """Check if message already exists in recent channel history"""
+        messages = await channel.history(limit=5).flatten()
+        return any(message.content == message_content for message in messages)
+
     async def send_alerts_for_guild(self, guild: discord.Guild) -> None:
         """Send alliance change alerts for a specific guild"""
         logger.info(f"Sending alerts for {str(guild.id)}")
@@ -77,10 +84,19 @@ class NotificationService:
             old_alliance = get_alliance_tag_from_id(conn, player_data[3])
             new_alliance = get_alliance_tag_from_id(conn, player_data[2])
 
-            await channel.send(
+            alert_message = (
                 f"Player {player_data[1]} has changed alliances from "
                 f"**{old_alliance}** to **{new_alliance}**"
             )
+
+            # Check recent message history
+            if await self._message_exists(channel, alert_message):
+                logger.info(
+                    f"Skipping alliance change alert for {player_data[1]} because it was already sent."
+                )
+                return
+
+            await channel.send(alert_message)
         except Exception as e:
             logger.error(f"Error sending player alert: {e}")
 
@@ -100,7 +116,13 @@ class NotificationService:
 
                 channel = self._find_player_channel(guild, row[1])
                 if channel is not None:
-                    await channel.send(f"Player {row[1]} has deleted their account.")
+                    alert_message = f"Player {row[1]} has deleted their account."
+                    if await self._message_exists(channel, alert_message):
+                        logger.info(
+                            f"Skipping alert for {row[1]} because it was already sent."
+                        )
+                        return
+                    await channel.send(alert_message)
 
         except Exception as e:
             logger.error(f"Error sending alerts for guild {guild.id}: {e}")

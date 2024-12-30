@@ -137,3 +137,77 @@ class TestNotificationService(unittest.TestCase):
 
         # Verify no alerts were sent (channel not found)
         self.channel.send.assert_not_called()
+
+    @patch("bot.services.notification_service.read_config_str")
+    @patch("bot.services.notification_service.get_connection_path")
+    @patch("sqlite3.connect")
+    @patch("bot.services.notification_service.get_alliance_tag_from_id")
+    async def test_skip_duplicate_alliance_alert(
+        self, mock_get_alliance, mock_connect, mock_get_path, mock_config
+    ):
+        # Setup mocks
+        mock_config.return_value = "test_server"
+        mock_get_path.return_value = "test_path"
+
+        # Mock database connection and cursor
+        mock_conn = MagicMock(spec=sqlite3.Connection)
+        mock_connect.return_value = mock_conn
+
+        # Mock alliance tags
+        mock_get_alliance.side_effect = ["OLD", "NEW"]
+
+        # Create test data - valid timestamp (today)
+        today = datetime.datetime.utcnow().strftime("%Y-%m-%d")
+        test_data = [
+            (1, "Test Player", "NEW_ID", "OLD_ID", 2, 2, 100, 100, 0, 1, 0, today)
+        ]
+        mock_conn.execute.return_value = test_data
+
+        # Mock channel history to simulate existing message
+        existing_message = MagicMock(spec=discord.Message)
+        existing_message.content = (
+            "Player Test Player has changed alliances from **OLD** to **NEW**"
+        )
+        self.channel.history.return_value.flatten = AsyncMock(
+            return_value=[existing_message]
+        )
+
+        # Execute test
+        await self.service.send_alerts_for_guild(self.guild)
+
+        # Verify no new alert was sent
+        self.channel.send.assert_not_called()
+
+    @patch("bot.services.notification_service.read_config_str")
+    @patch("bot.services.notification_service.get_connection_path")
+    @patch("sqlite3.connect")
+    async def test_skip_duplicate_delete_alert(
+        self, mock_connect, mock_get_path, mock_config
+    ):
+        # Setup mocks
+        mock_config.return_value = "test_server"
+        mock_get_path.return_value = "test_path"
+
+        # Mock database connection
+        mock_conn = MagicMock(spec=sqlite3.Connection)
+        mock_connect.return_value = mock_conn
+
+        # Create test data for deleted player (current_population = 0)
+        today = datetime.datetime.utcnow().strftime("%Y-%m-%d")
+        test_data = [
+            (1, "Test Player", "ALLIANCE_ID", "OLD_ID", 0, 2, 0, 100, 1, 0, -100, today)
+        ]
+        mock_conn.execute.return_value = test_data
+
+        # Mock channel history to simulate existing delete message
+        existing_message = MagicMock(spec=discord.Message)
+        existing_message.content = "Player Test Player has deleted their account."
+        self.channel.history.return_value.flatten = AsyncMock(
+            return_value=[existing_message]
+        )
+
+        # Execute test
+        await self.service.send_alerts_for_guild(self.guild)
+
+        # Verify no new alert was sent
+        self.channel.send.assert_not_called()
