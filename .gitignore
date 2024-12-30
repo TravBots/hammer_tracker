@@ -1,11 +1,11 @@
 *.db
 sqlite_test.py
 env/
-config.ini
+bot/config.ini
 nohup.out
 __pycache__/
 .pytest*
 .vscode
 map.sql
 logs/
-bot/.DS_Store
+.DS_Store
