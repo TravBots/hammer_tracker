@@ -136,6 +136,7 @@ class BoinkApp(BaseApp):
         game_server = read_config_str(self.guild_id, ConfigKeys.GAME_SERVER, "")
 
         if game_server == "":
+            logger.error(f"No game_server set for {self.guild_id}")
             embed = discord.Embed(color=Colors.ERROR)
             embed.add_field(name="Error", value="No game_server set.")
             await message.channel.send(embed=embed)
@@ -202,6 +203,7 @@ class BoinkApp(BaseApp):
 
                 await message.channel.send(embed=embed)
             else:
+                logger.error(f"No results found for {ign} in the map")
                 raise Exception("No results found")
         except Exception as e:
             logger.warn(
