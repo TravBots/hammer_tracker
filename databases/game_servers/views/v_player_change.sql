@@ -2,8 +2,8 @@ DROP VIEW IF EXISTS v_player_change;
 CREATE VIEW v_player_change AS
 WITH date_range AS (
     SELECT
-        MAX(date) AS current_date,
-        DATE(MAX(date), '-1 day') AS previous_date
+        MAX(date) AS today_timestamp,
+        DATE(MAX(date), '-1 day') AS yesterday_timestamp
     FROM v_map_history
 ),
 player_data AS (
@@ -13,10 +13,10 @@ player_data AS (
         m.alliance_id,
         m.village_id,
         m.population,
-        CASE WHEN m.date = d.current_date THEN 'current' ELSE 'previous' END AS data_type
+        CASE WHEN m.date = d.today_timestamp THEN 'current' ELSE 'previous' END AS data_type
     FROM v_map_history m
     CROSS JOIN date_range d
-    WHERE m.date IN (d.current_date, d.previous_date)
+    WHERE m.date IN (d.today_timestamp, d.yesterday_timestamp)
 ),
 aggregated_data AS (
     SELECT
@@ -42,6 +42,7 @@ SELECT
     previous_population,
     (current_villages_count != previous_villages_count) AS villages_changed,
     (COALESCE(current_alliance_id, 'Unspecified') != COALESCE(previous_alliance_id, 'Unspecified')) AS alliance_changed,
-    (current_population - previous_population) AS population_change
+    (current_population - previous_population) AS population_change,
+    (SELECT today_timestamp FROM date_range) AS created_at
 FROM aggregated_data;
 

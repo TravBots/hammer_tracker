@@ -4,12 +4,12 @@ from utils.logger import logger
 from utils.constants import ANALYTICS_DB_PATH
 
 
-class AnalyticsManager:
+class AnalyticsService:
     """Class to manage analytics data across all Discord servers"""
 
     def __init__(self):
         self.db_path = ANALYTICS_DB_PATH
-        logger.info("Analytics Manager initialized")
+        logger.info("Analytics Service initialized")
 
     def record_command(
         self,

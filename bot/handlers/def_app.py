@@ -6,7 +6,7 @@ from utils.decorators import *
 from utils.printers import *
 from utils.logger import logger
 from funcs import *
-from utils.config_manager import read_config_str
+from services.config_service import read_config_str
 from utils.constants import ConfigKeys
 
 
