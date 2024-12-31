@@ -40,7 +40,7 @@ class NotificationService:
         self, channel: discord.TextChannel, message_content: str
     ) -> bool:
         """Check if message already exists in recent channel history"""
-        messages = await channel.history(limit=5).flatten()
+        messages = [msg async for msg in channel.history(limit=5)]
         return any(message.content == message_content for message in messages)
 
     async def send_alerts_for_guild(self, guild: discord.Guild) -> None:

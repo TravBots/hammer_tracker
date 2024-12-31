@@ -199,12 +199,14 @@ class TestNotificationService(unittest.TestCase):
         ]
         mock_conn.execute.return_value = test_data
 
-        # Mock channel history to simulate existing delete message
+        # Mock channel history to return an async iterator with the existing message
         existing_message = MagicMock(spec=discord.Message)
         existing_message.content = "Player Test Player has deleted their account."
-        self.channel.history.return_value.flatten = AsyncMock(
-            return_value=[existing_message]
-        )
+
+        async def mock_history(*args, **kwargs):
+            yield existing_message
+
+        self.channel.history.return_value = mock_history()
 
         # Execute test
         await self.service.send_alerts_for_guild(self.guild)
