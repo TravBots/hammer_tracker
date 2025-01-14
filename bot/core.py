@@ -21,7 +21,7 @@ from utils.validators import (
     preprocess_coordinates,
 )
 from zoneinfo import ZoneInfo
-from services.config_service import read_config_str, read_config_bool
+from services.config_service import read_config_str, read_config_bool, read_config_int
 from commands import COMMAND_LIST
 from services.notification_service import NotificationService
 
@@ -220,11 +220,9 @@ class Core(discord.Client):
 
         for guild in self.guilds:
             try:
-                logger.info(
-                    f"Config for {guild}: {read_config_str(guild.id, ConfigKeys.ALERTS, '0')}"
+                await self.notifications.work(
+                    guild, read_config_int(guild.id, ConfigKeys.ALERTS, 0)
                 )
-                if read_config_str(guild.id, ConfigKeys.ALERTS, "0") == "1":
-                    await self.notifications.send_alerts_for_guild(guild)
             except KeyError as e:
                 logger.error(f"Failed to check alerts for {guild}")
                 logger.error(e)
