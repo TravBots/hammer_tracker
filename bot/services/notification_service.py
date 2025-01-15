@@ -42,8 +42,14 @@ class NotificationService:
         self, channel: discord.TextChannel, message_content: str
     ) -> bool:
         """Check if message already exists in recent channel history"""
-        messages = [msg async for msg in channel.history(limit=5)]
-        return any(message.content == message_content for message in messages)
+        try:
+            async for msg in channel.history(limit=5):
+                if msg.content == message_content:
+                    return True
+            return False
+        except Exception as e:
+            logger.error(f"Error checking message history: {e}")
+            return False
 
     ######### ALERT FUNCTIONS #########
 
