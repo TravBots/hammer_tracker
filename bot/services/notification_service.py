@@ -223,7 +223,7 @@ class NotificationService:
         logger.info(
             f"Processing alerts for guild {guild.id} with alert code {alert_code}"
         )
-        if alert_code == 0:
+        if alert_code is None or alert_code == 0:
             logger.info(f"No alerts to process for guild {guild.id}")
             return
 
