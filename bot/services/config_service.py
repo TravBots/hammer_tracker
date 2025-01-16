@@ -40,6 +40,13 @@ class ConfigService:
         except KeyError:
             return default
 
+    def read_config_int(self, section: str, key: str, default: int = 0) -> int:
+        """Read an integer value from the config"""
+        try:
+            return self._config[str(section)].getint(key)
+        except KeyError:
+            return default
+
     def update_config(self, section: str, key: str, value: str) -> bool:
         """Update a config value and save to disk"""
         try:
@@ -79,6 +86,10 @@ def read_config_str(section: str, key: str, default: str = "") -> str:
 
 def read_config_bool(section: str, key: str, default: bool = False) -> bool:
     return config_service.read_config_bool(section, key, default)
+
+
+def read_config_int(section: str, key: str, default: int = 0) -> int:
+    return config_service.read_config_int(section, key, default)
 
 
 def update_config(section: str, key: str, value: str) -> bool:

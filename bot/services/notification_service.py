@@ -2,7 +2,7 @@ import datetime
 import sqlite3
 import string
 import discord
-from utils.constants import ConfigKeys
+from utils.constants import ConfigKeys, NotificationFlags, Colors
 from utils.logger import logger
 from services.config_service import read_config_str
 from funcs import get_alliance_tag_from_id, get_connection_path
@@ -13,6 +13,8 @@ class NotificationService:
 
     def __init__(self):
         logger.info("Notification Service initialized")
+
+    ######### UTIL FUNCTIONS #########
 
     def _is_data_too_old(self, timestamp_str: str) -> bool:
         """Check if the data timestamp is more than 1 day old"""
@@ -40,19 +42,16 @@ class NotificationService:
         self, channel: discord.TextChannel, message_content: str
     ) -> bool:
         """Check if message already exists in recent channel history"""
-        messages = [msg async for msg in channel.history(limit=5)]
-        return any(message.content == message_content for message in messages)
+        try:
+            async for msg in channel.history(limit=5):
+                if msg.content == message_content:
+                    return True
+            return False
+        except Exception as e:
+            logger.error(f"Error checking message history: {e}")
+            return False
 
-    async def send_alerts_for_guild(self, guild: discord.Guild) -> None:
-        """Send alliance change alerts for a specific guild"""
-        logger.info(f"Sending alerts for {str(guild.id)}")
-
-        # Get game server config and connect to DB
-        game_server = read_config_str(guild.id, ConfigKeys.GAME_SERVER, "")
-
-        with sqlite3.connect(get_connection_path(game_server)) as conn:
-            await self._send_player_deleted_alert(conn, guild)
-            await self._send_alliance_change_alert(conn, guild)
+    ######### ALERT FUNCTIONS #########
 
     async def _send_alliance_change_alert(
         self, conn: sqlite3.Connection, guild: discord.Guild
@@ -133,3 +132,116 @@ class NotificationService:
 
         except Exception as e:
             logger.error(f"Error sending alerts for guild {guild.id}: {e}")
+
+    async def _send_new_village_alert(
+        self, conn: sqlite3.Connection, guild: discord.Guild
+    ) -> None:
+        """Send an alert about new villages to the specified channel"""
+        enemy_aliances = read_config_str(guild.id, ConfigKeys.ENEMY_ALLIANCES, "")
+        if enemy_aliances == "":
+            logger.info(f"No enemy alliances found for guild {guild.id}")
+            return
+
+        home_quad = read_config_str(guild.id, ConfigKeys.HOME_QUAD, "")
+        if home_quad == "":
+            logger.info(f"No home quad found for guild {guild.id}")
+            return
+
+        notif_channel = read_config_str(guild.id, ConfigKeys.NOTIF_CHANNEL, "")
+        if notif_channel == "":
+            logger.info(f"No notification channel found for guild {guild.id}")
+            return
+
+        # Define coordinate conditions based on quadrant
+        coord_conditions = {
+            "NW": "x_coordinate < 0 AND y_coordinate > 0",
+            "NE": "x_coordinate > 0 AND y_coordinate > 0",
+            "SW": "x_coordinate < 0 AND y_coordinate < 0",
+            "SE": "x_coordinate > 0 AND y_coordinate < 0",
+        }
+
+        quad_condition = coord_conditions.get(home_quad.upper())
+        if not quad_condition:
+            logger.error(f"Invalid home quadrant specified: {home_quad}")
+            return
+
+        for alliance in enemy_aliances.split(","):
+            logger.info(f"Checking for new villages from alliance {alliance}")
+
+            query = f"""
+            SELECT 
+                player_name,
+                x_coordinate,
+                y_coordinate,
+                population,
+                alliance_tag
+            FROM v_new_villages 
+            WHERE alliance_tag = ? 
+            AND {quad_condition}
+            """
+
+            # Convert cursor to list to get count
+            rows = list(conn.execute(query, (alliance.strip(),)))
+
+            channel = discord.utils.get(guild.text_channels, name=notif_channel)
+            if channel is None:
+                logger.error(f"Could not find notification channel {notif_channel}")
+                return
+
+            for row in rows:
+                logger.info(f"Sending new village alert for {row[0]}")
+
+                embed = discord.Embed(color=Colors.WARNING)
+                embed.add_field(
+                    name="New Village Detected!",
+                    value=(
+                        f"**Player:** {row[0]}\n"
+                        f"**Alliance:** {row[4]}\n"
+                        f"**Population:** {row[3]}\n"
+                        f"**Location:** [{row[1]}|{row[2]}]"
+                    ),
+                )
+
+                # Convert the embed to a string representation for comparison
+                embed_dict = embed.to_dict()
+                embed_str = str(embed_dict)
+
+                if await self._message_exists(channel, embed_str):
+                    logger.info(
+                        f"Skipping new village alert for {row[0]} because it was already sent."
+                    )
+                    continue
+
+                await channel.send(embed=embed)
+
+            logger.info(f"Sent {len(rows)} new village alerts for alliance {alliance}")
+
+    ######### WORK FUNCTION #########
+
+    async def work(self, guild: discord.Guild, alert_code: int) -> None:
+        """Main work function for the notification service"""
+        logger.info(
+            f"Processing alerts for guild {guild.id} with alert code {alert_code}"
+        )
+        if alert_code == 0:
+            logger.info(f"No alerts to process for guild {guild.id}")
+            return
+
+        # Get game server config and connect to DB
+        game_server = read_config_str(guild.id, ConfigKeys.GAME_SERVER, "")
+
+        with sqlite3.connect(get_connection_path(game_server)) as conn:
+            # Check each flag and process corresponding alerts
+            if alert_code & NotificationFlags.PLAYER_DELETED:
+                logger.info("Sending player deleted alerts")
+                await self._send_player_deleted_alert(conn, guild)
+
+            if alert_code & NotificationFlags.ALLIANCE_CHANGE:
+                logger.info("Sending alliance change alerts")
+                await self._send_alliance_change_alert(conn, guild)
+
+            if alert_code & NotificationFlags.NEW_VILLAGE:
+                logger.info("Sending new village alerts")
+                await self._send_new_village_alert(conn, guild)
+
+        logger.info(f"Processed alerts for guild {guild.id}")

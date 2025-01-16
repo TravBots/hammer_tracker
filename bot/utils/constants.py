@@ -18,12 +18,22 @@ class ConfigKeys:
     IGNORE_24_7 = "ignore_24_7"
     CLEAN_UP_THREADS = "clean_up_threads"
     DEFAULT = "default"
+    HOME_QUAD = "home_quad"
+    ENEMY_ALLIANCES = "enemy_alliances"
+    NOTIF_CHANNEL = "notif_channel"
 
 
 class Apps:
     BOINK = "boink"
     TRACKER = "tracker"
     DEF = "def"
+
+
+class NotificationFlags:
+    NONE = 0
+    PLAYER_DELETED = 1
+    ALLIANCE_CHANGE = 2
+    NEW_VILLAGE = 4
 
 
 APPLICATIONS = [Apps.BOINK, Apps.TRACKER, Apps.DEF]
