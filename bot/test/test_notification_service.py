@@ -4,6 +4,7 @@ import pytest
 from unittest.mock import MagicMock, AsyncMock, patch
 import sqlite3
 from services.notification_service import NotificationService
+from utils.constants import Colors, NotificationFlags
 
 
 @pytest.fixture
@@ -117,3 +118,50 @@ class TestNotificationService:
 
         # Verify no new alert was sent
         assert not channel.send.called
+
+    async def test_send_new_village_alert(self, notification_service):
+        service, guild, channel = notification_service
+
+        # Setup mocks
+        mock_conn = MagicMock(spec=sqlite3.Connection)
+
+        # Create notification channel
+        notif_channel = AsyncMock(spec=discord.TextChannel)
+        notif_channel.name = "new-villages"
+        notif_channel.send = AsyncMock()
+        guild.text_channels = [notif_channel]
+
+        # Mock history for duplicate check
+        mock_history = AsyncMock()
+        mock_history.return_value.__aiter__.return_value = []
+        notif_channel.history = mock_history
+
+        # Create test data
+        test_data = [
+            ("Test Player", -100, 100, 200, "ALLIANCE1"),
+            ("Test Player 2", -50, 150, 300, "ALLIANCE1"),
+        ]
+        mock_conn.execute.return_value = test_data
+
+        # Mock config reads
+        with patch("services.notification_service.read_config_str") as mock_config:
+            mock_config.side_effect = [
+                "ALLIANCE1",  # enemy_alliances
+                "NW",  # home_quad
+                "new-villages",  # notif_channel
+            ]
+
+            # Execute test
+            await service._send_new_village_alert(mock_conn, guild)
+
+            # Verify alerts were sent
+            assert notif_channel.send.call_count == 2
+
+            # Verify first alert content
+            first_call_embed = notif_channel.send.call_args_list[0][1]["embed"]
+            assert first_call_embed.color.value == Colors.WARNING
+            assert first_call_embed.fields[0].name == "New Village Detected!"
+            assert "Test Player" in first_call_embed.fields[0].value
+            assert "[-100|100]" in first_call_embed.fields[0].value
+            assert "200" in first_call_embed.fields[0].value
+            assert "ALLIANCE1" in first_call_embed.fields[0].value
