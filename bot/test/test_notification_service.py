@@ -17,7 +17,7 @@ async def notification_service():
     guild.text_channels = [channel]
 
     # Set up basic channel configuration
-    channel.name = "testplayer"
+    channel.name = "test-player"
     channel.send = AsyncMock()
 
     # Properly mock history for async iteration
@@ -73,6 +73,12 @@ class TestNotificationService:
 
         # Verify no alerts were sent
         assert not channel.send.called
+
+    async def test_format_channel_name(self, notification_service):
+        service, guild, channel = notification_service
+        assert service._format_channel_name("Test Player") == "test-player"
+        assert service._format_channel_name("Test_Player") == "test_player"
+        assert service._format_channel_name("Test-Player") == "test-player"
 
     async def test_send_alerts_old_data(self, notification_service):
         service, guild, channel = notification_service
