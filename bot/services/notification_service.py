@@ -21,10 +21,18 @@ class NotificationService:
         timestamp = datetime.datetime.strptime(timestamp_str, "%Y-%m-%d")
         return timestamp < datetime.datetime.utcnow() - datetime.timedelta(days=1)
 
+    # Define a helper variable to exclude underscores from punctuation
+    punctuation_without_underscore = string.punctuation.replace("_", "").replace(
+        "-", ""
+    )
+
     def _format_channel_name(self, player_name: str) -> str:
-        """Format player name into valid Discord channel name"""
+        """Format player name into valid Discord channel name, preserving underscores and hyphens."""
         channel_name = player_name.replace(" ", "-").lower()
-        return channel_name.translate(str.maketrans("", "", string.punctuation))
+        # Remove punctuation but keep underscores and hyphens
+        return channel_name.translate(
+            str.maketrans("", "", self.punctuation_without_underscore)
+        )
 
     def _find_player_channel(
         self, guild: discord.Guild, player_name: str
