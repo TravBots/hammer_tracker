@@ -24,6 +24,7 @@ from zoneinfo import ZoneInfo
 from services.config_service import read_config_str, read_config_bool, read_config_int
 from commands import COMMAND_LIST
 from services.notification_service import NotificationService
+from services.raid_tracking_service import RaidTrackingService
 
 intents = discord.Intents.all()
 intents.message_content = True
@@ -41,6 +42,7 @@ class Core(discord.Client):
         self.token = read_config_str(ConfigKeys.DEFAULT, ConfigKeys.TOKEN, "")
         self.analytics = AnalyticsService()
         self.notifications = NotificationService()
+        self.raid_tracker = RaidTrackingService()
 
     async def setup_hook(self):
         # Add the commands directly
@@ -65,6 +67,9 @@ class Core(discord.Client):
                     await channel.send(message.content)
                 else:
                     await channel.send(embeds=message.embeds)
+
+        if message.author.bot:
+            return
 
         app = get_app(message)
         logger.debug(f"App: {app}")
@@ -104,6 +109,29 @@ class Core(discord.Client):
                 value=f"{game_server}/position_details.php?x={x}&y={y}",
             )
             await message.channel.send(embed=embed)
+
+        # Check if message looks like a raid leaderboard and is in the correct channel
+        raid_channel = read_config_str(
+            str(message.guild.id), ConfigKeys.RAID_CHANNEL, ""
+        )
+        if raid_channel and str(message.channel.id) == raid_channel:
+            if any(
+                line.strip().startswith("1.") for line in message.content.split("\n")
+            ):
+                try:
+                    db_path = read_config_str(
+                        str(message.guild.id), ConfigKeys.DATABASE, ""
+                    )
+                    if not db_path:
+                        return
+
+                    embed = await self.raid_tracker.process_leaderboard(
+                        message, db_path
+                    )
+                    if embed:
+                        await message.channel.send(embed=embed)
+                except Exception as e:
+                    logger.error(f"Error processing potential leaderboard: {e}")
 
     async def on_scheduled_event_create(self, event: discord.ScheduledEvent):
         guild_id = str(event.guild.id)

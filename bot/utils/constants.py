@@ -21,6 +21,7 @@ class ConfigKeys:
     HOME_QUAD = "home_quad"
     ENEMY_ALLIANCES = "enemy_alliances"
     NOTIF_CHANNEL = "notif_channel"
+    RAID_CHANNEL = "raid_channel"
 
 
 class Apps:
