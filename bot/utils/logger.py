@@ -2,12 +2,13 @@ import logging as logger
 import datetime
 import os
 from threading import Timer
+import argparse
 
 # Create a unique filename based on the current timestamp
 BASE_LOG_PATH = "../logs/"
 
 
-def setup_logging():
+def setup_logging(log_level=None):
     # Remove all handlers if exist
     for handler in logger.root.handlers[:]:
         logger.root.removeHandler(handler)
@@ -21,16 +22,29 @@ def setup_logging():
 
     log_path = os.path.join(log_dir, log_filename)
 
+    # Use provided log_level or default to INFO
+    level = log_level if log_level is not None else logger.INFO
+
     logger.basicConfig(
-        level=logger.INFO,
+        level=level,
         format="%(asctime)s - %(filename)s:%(lineno)d - %(levelname)s - %(message)s",
         handlers=[logger.StreamHandler(), logger.FileHandler(log_path)],
     )
 
 
-def periodic_log_check():
+def add_logging_args(parser):
+    """Add logging-related command line arguments to an ArgumentParser."""
+    parser.add_argument(
+        "--log-level",
+        choices=["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"],
+        default="INFO",
+        help="Set the logging level",
+    )
+
+
+def periodic_log_check(log_level=None):
     # Check and update log configuration every hour
-    setup_logging()
+    setup_logging(log_level)
 
     # Schedule the next check
     interval = 3600 - (

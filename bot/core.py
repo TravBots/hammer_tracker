@@ -1,3 +1,4 @@
+import argparse
 import datetime
 import sqlite3
 from typing import Any
@@ -14,7 +15,7 @@ from funcs import (
 )
 from services.analytics_service import AnalyticsService
 from utils.constants import ALLOW_FORWARDING, BOT_SERVERS_DB_PATH, Colors, ConfigKeys
-from utils.logger import logger, periodic_log_check
+from utils.logger import logger, periodic_log_check, add_logging_args
 from utils.validators import (
     coordinates_are_valid,
     should_forward,
@@ -258,7 +259,11 @@ class Core(discord.Client):
 
 if __name__ == "__main__":
     # Init logging first
-    periodic_log_check()
+    parser = argparse.ArgumentParser()
+    add_logging_args(parser)
+    args = parser.parse_args()
+    log_level = getattr(logger, args.log_level)
+    periodic_log_check(log_level)
 
     client = Core(intents=intents)
     client.run(client.token)

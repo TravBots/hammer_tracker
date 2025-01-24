@@ -26,6 +26,9 @@ setup:
 dev: $(VENV)
 	@$(BIN)/python core.py
 
+dev-debug: $(VENV)
+	@$(BIN)/python core.py --log-level=DEBUG
+
 lint: $(VENV)
 	@$(BIN)/python -m ruff check
 
