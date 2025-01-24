@@ -68,8 +68,8 @@ class Core(discord.Client):
                 else:
                     await channel.send(embeds=message.embeds)
 
-        if message.author.bot:
-            return
+        # if message.author.bot:
+        #     return
 
         app = get_app(message)
         logger.debug(f"App: {app}")
