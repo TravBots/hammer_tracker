@@ -9,8 +9,9 @@ import discord
 
 class RaidTrackingService:
     def __init__(self):
+        # Match both "123." and "123" formats for rank
         self.leaderboard_pattern = re.compile(
-            r"(\d+)\.\s+([^\d]+?)\s+[\u202d\u202c\u200f\u200e]*([0-9,]+)"
+            r"(\d+)\.?\s+([^\d]+?)\s+[\u202d\u202c\u200f\u200e]*([0-9,]+)"
         )
 
     def _parse_leaderboard(self, content: str) -> List[Tuple[int, str, int]]:
@@ -26,6 +27,11 @@ class RaidTrackingService:
             results.append((rank, name, total))
 
         logger.debug(f"Parsed {len(results)} entries from leaderboard")
+
+        # Validate we got all entries (10 top + 1 personal)
+        if len(results) != 11:
+            logger.warning(f"Expected 11 entries but got {len(results)}")
+
         return results
 
     def _round_to_last_update(self, dt: datetime) -> datetime:
@@ -67,6 +73,23 @@ class RaidTrackingService:
                 # Store top 10 with rounded timestamp
                 rounded_time = self._round_to_last_update(now)
                 for rank, name, total in top_entries:
+                    # Check if record already exists
+                    existing = conn.execute(
+                        """
+                        SELECT id FROM RAID_TRACKING 
+                        WHERE player_name = ? 
+                        AND recorded_at = ?
+                        AND is_personal = FALSE
+                        """,
+                        (name, rounded_time),
+                    ).fetchone()
+
+                    if existing:
+                        logger.debug(
+                            f"Skipping duplicate entry for {name} at {rounded_time}"
+                        )
+                        continue
+
                     logger.debug(
                         f"Storing top entry: {name} (rank {rank}) with {total:,} at {rounded_time}"
                     )
@@ -75,7 +98,7 @@ class RaidTrackingService:
                         INSERT INTO RAID_TRACKING (
                             player_name, rank, total_raided, channel_id, recorded_at, is_personal
                         ) VALUES (?, ?, ?, ?, ?, ?)
-                    """,
+                        """,
                         (
                             name,
                             rank,
@@ -89,17 +112,33 @@ class RaidTrackingService:
                 # Store personal entry with exact timestamp
                 if personal_entry:
                     rank, name, total = personal_entry
-                    logger.debug(
-                        f"Storing personal entry: {name} (rank {rank}) with {total:,}"
-                    )
-                    conn.execute(
+                    # Check if record already exists
+                    existing = conn.execute(
                         """
-                        INSERT INTO RAID_TRACKING (
-                            player_name, rank, total_raided, channel_id, recorded_at, is_personal
-                        ) VALUES (?, ?, ?, ?, ?, ?)
-                    """,
-                        (name, rank, total, str(message.channel.id), now, True),
-                    )
+                        SELECT id FROM RAID_TRACKING 
+                        WHERE player_name = ? 
+                        AND recorded_at = ?
+                        AND is_personal = TRUE
+                        """,
+                        (name, now),
+                    ).fetchone()
+
+                    if not existing:
+                        logger.debug(
+                            f"Storing personal entry: {name} (rank {rank}) with {total:,}"
+                        )
+                        conn.execute(
+                            """
+                            INSERT INTO RAID_TRACKING (
+                                player_name, rank, total_raided, channel_id, recorded_at, is_personal
+                            ) VALUES (?, ?, ?, ?, ?, ?)
+                            """,
+                            (name, rank, total, str(message.channel.id), now, True),
+                        )
+                    else:
+                        logger.debug(
+                            f"Skipping duplicate personal entry for {name} at {now}"
+                        )
 
             # Calculate raid rates
             return await self._calculate_raid_rates(conn, top_entries, personal_entry)
@@ -116,7 +155,7 @@ class RaidTrackingService:
     ) -> discord.Embed:
         """Calculate raiding rates and create response embed"""
         logger.info("Calculating raid rates")
-        embed = discord.Embed(title="Raiding Rates (per hour)", color=Colors.SUCCESS)
+        embed = discord.Embed(title="Raiding Rates", color=Colors.SUCCESS)
         now = datetime.utcnow()
 
         # Get the most recent Sunday at 00:30 UTC
@@ -132,8 +171,39 @@ class RaidTrackingService:
         # Calculate for top 10
         top_rates = []
         for rank, name, current_total in top_entries:
-            logger.debug(f"Calculating rate for {name} (rank {rank})")
-            # Get the earliest record after the weekly reset
+            logger.debug(f"Calculating rates for {name} (rank {rank})")
+
+            # Get two most recent records for current rate, but only within this week
+            recent_records = conn.execute(
+                """
+                SELECT total_raided, recorded_at
+                FROM RAID_TRACKING 
+                WHERE player_name = ? 
+                AND is_personal = FALSE
+                AND recorded_at >= ?
+                ORDER BY recorded_at DESC
+                LIMIT 2
+                """,
+                (name, week_start),
+            ).fetchall()
+
+            if len(recent_records) < 2:
+                # New player with insufficient history this week
+                top_rates.append(
+                    f"{rank}. {name}:\n⭐ New to leaderboard! ⭐\nTotal: {current_total:,}"
+                )
+                continue
+
+            end_total, end_time = recent_records[0]  # Most recent record
+            start_total, start_time = recent_records[1]  # Second most recent
+            end_time = datetime.strptime(end_time, "%Y-%m-%d %H:%M:%S")
+            start_time = datetime.strptime(start_time, "%Y-%m-%d %H:%M:%S")
+            hours_elapsed = (end_time - start_time).total_seconds() / 3600
+            current_rate = 0
+            if hours_elapsed > 0:
+                current_rate = f"{int((end_total - start_total) / hours_elapsed):,}"
+
+            # Get weekly average
             week_start_record = conn.execute(
                 """
                 SELECT total_raided, recorded_at
@@ -143,115 +213,102 @@ class RaidTrackingService:
                 AND is_personal = FALSE
                 ORDER BY recorded_at ASC
                 LIMIT 1
-            """,
+                """,
                 (name, week_start),
             ).fetchone()
 
+            week_rate = "N/A"
             if week_start_record:
                 start_total = week_start_record[0]
                 start_time = datetime.strptime(
                     week_start_record[1], "%Y-%m-%d %H:%M:%S"
                 )
-                logger.debug(
-                    f"Found start record for {name}: {start_total:,} at {start_time}"
-                )
-
                 hours_elapsed = (now - start_time).total_seconds() / 3600
                 if hours_elapsed > 0:
-                    hourly_rate = int((current_total - start_total) / hours_elapsed)
-                    logger.debug(
-                        f"Calculated rate for {name}: {hourly_rate:,}/hr over {hours_elapsed:.1f} hours"
+                    week_rate = (
+                        f"{int((current_total - start_total) / hours_elapsed):,}"
                     )
-                    top_rates.append(f"{rank}. {name}: {hourly_rate:,}/hr")
-            else:
-                logger.debug(f"No week start record found for {name}")
+                    logger.debug(
+                        f"Calculated week rate for {name}: {week_rate}/hr over {hours_elapsed:.1f} hours"
+                    )
+                    logger.debug(
+                        f"*******: current_total: {current_total}, start_total: {start_total}, hours_elapsed: {hours_elapsed}"
+                    )
+
+            top_rates.append(
+                f"{rank}. {name}:\nCurrent: {current_rate}/hr\nWeek Avg: {week_rate}/hr"
+            )
 
         if top_rates:
             embed.add_field(
-                name="Top Raiders (Week Average)",
+                name="Top Raiders",
                 value="\n".join(top_rates),
                 inline=False,
             )
 
-        # Calculate personal rate if available
+        # Handle personal entry
         if personal_entry:
             rank, name, current_total = personal_entry
-            logger.debug(f"Calculating personal rate for {name}")
+            logger.debug(f"Calculating personal rates for {name}")
 
-            two_hours_ago = self._round_to_last_update(now - timedelta(hours=2))
-            logger.debug(f"Looking for records between {two_hours_ago} and {now}")
-
-            prev_records = conn.execute(
+            recent_records = conn.execute(
                 """
                 SELECT total_raided, recorded_at
                 FROM RAID_TRACKING 
                 WHERE player_name = ? 
-                AND recorded_at >= ?
-                AND recorded_at < ?
                 AND is_personal = TRUE
+                AND recorded_at >= ?
                 ORDER BY recorded_at DESC
-            """,
-                (name, two_hours_ago, now),
+                LIMIT 2
+                """,
+                (name, week_start),
             ).fetchall()
 
-            if prev_records:
-                logger.debug(f"Found {len(prev_records)} previous records for {name}")
-                oldest_record = prev_records[-1]
-                start_total = oldest_record[0]
-                start_time = datetime.strptime(oldest_record[1], "%Y-%m-%d %H:%M:%S")
-                logger.debug(f"Using oldest record: {start_total:,} at {start_time}")
-
-                hours_elapsed = (now - start_time).total_seconds() / 3600
-                if hours_elapsed > 0:
-                    recent_rate = int((current_total - start_total) / hours_elapsed)
-                    logger.debug(
-                        f"Calculated recent rate for {name}: {recent_rate:,}/hr over {hours_elapsed:.1f} hours"
-                    )
-
-                    # Also get weekly average
-                    week_start_record = conn.execute(
-                        """
-                        SELECT total_raided, recorded_at
-                        FROM RAID_TRACKING 
-                        WHERE player_name = ? 
-                        AND recorded_at >= ?
-                        AND is_personal = TRUE
-                        ORDER BY recorded_at ASC
-                        LIMIT 1
-                    """,
-                        (name, week_start),
-                    ).fetchone()
-
-                    if week_start_record:
-                        start_total = week_start_record[0]
-                        start_time = datetime.strptime(
-                            week_start_record[1], "%Y-%m-%d %H:%M:%S"
-                        )
-                        logger.debug(
-                            f"Found week start record for {name}: {start_total:,} at {start_time}"
-                        )
-
-                        hours_elapsed = (now - start_time).total_seconds() / 3600
-                        if hours_elapsed > 0:
-                            week_rate = int(
-                                (current_total - start_total) / hours_elapsed
-                            )
-                            logger.debug(
-                                f"Calculated week rate for {name}: {week_rate:,}/hr over {hours_elapsed:.1f} hours"
-                            )
-                            embed.add_field(
-                                name=f"Your Raiding Rate ({name})",
-                                value=f"Recent: {recent_rate:,}/hr\nWeek Average: {week_rate:,}/hr",
-                                inline=False,
-                            )
-                    else:
-                        logger.debug(f"No week start record found for {name}")
-                        embed.add_field(
-                            name=f"Your Raiding Rate ({name})",
-                            value=f"Recent: {recent_rate:,}/hr",
-                            inline=False,
-                        )
+            if len(recent_records) < 2:
+                embed.add_field(
+                    name=f"Your Raiding Stats ({name})",
+                    value=f"⭐ Welcome to the leaderboard! ⭐\nTotal: {current_total:,}",
+                    inline=False,
+                )
             else:
-                logger.debug(f"No recent records found for {name}")
+                end_total, end_time = recent_records[0]  # Most recent record
+                start_total, start_time = recent_records[1]  # Second most recent
+                end_time = datetime.strptime(end_time, "%Y-%m-%d %H:%M:%S")
+                start_time = datetime.strptime(start_time, "%Y-%m-%d %H:%M:%S")
+                hours_elapsed = (end_time - start_time).total_seconds() / 3600
+                if hours_elapsed > 0:
+                    current_rate = f"{int((end_total - start_total) / hours_elapsed):,}"
+
+                # Get weekly average
+                week_start_record = conn.execute(
+                    """
+                    SELECT total_raided, recorded_at
+                    FROM RAID_TRACKING 
+                    WHERE player_name = ? 
+                    AND recorded_at >= ?
+                    AND is_personal = TRUE
+                    ORDER BY recorded_at ASC
+                    LIMIT 1
+                    """,
+                    (name, week_start),
+                ).fetchone()
+
+                week_rate = "N/A"
+                if week_start_record:
+                    start_total = week_start_record[0]
+                    start_time = datetime.strptime(
+                        week_start_record[1], "%Y-%m-%d %H:%M:%S"
+                    )
+                    hours_elapsed = (now - start_time).total_seconds() / 3600
+                    if hours_elapsed > 0:
+                        week_rate = (
+                            f"{int((current_total - start_total) / hours_elapsed):,}"
+                        )
+
+                embed.add_field(
+                    name=f"Your Raiding Rate ({name})",
+                    value=f"Current: {current_rate}/hr\nWeek Average: {week_rate}/hr",
+                    inline=False,
+                )
 
         return embed
