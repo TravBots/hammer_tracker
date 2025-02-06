@@ -69,12 +69,14 @@ class BoinkApp(BaseApp):
             "sql/create_table_submitted_defense.sql"
         )
         create_defense_threads = get_sql_by_path("sql/create_table_defense_threads.sql")
+        create_raid_tracking = get_sql_by_path("sql/create_table_raid_tracking.sql")
 
         for query in [
             create_hammers,
             create_defense_calls,
             create_submitted_defense,
             create_defense_threads,
+            create_raid_tracking,
         ]:
             execute_sql(DB, query)
 
