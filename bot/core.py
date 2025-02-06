@@ -126,11 +126,11 @@ class Core(discord.Client):
                     if not db_path:
                         return
 
-                    embed = await self.raid_tracker.process_leaderboard(
+                    table = await self.raid_tracker.process_leaderboard(
                         message, db_path
                     )
-                    if embed:
-                        await message.channel.send(embed=embed)
+                    if table:
+                        await message.channel.send(table)
                 except Exception as e:
                     logger.error(f"Error processing potential leaderboard: {e}")
 

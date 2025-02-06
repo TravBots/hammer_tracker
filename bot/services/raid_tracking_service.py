@@ -64,6 +64,7 @@ class RaidTrackingService:
             # Split into top 10 and personal entry
             top_entries = [e for e in entries if e[0] <= 10]
             personal_entry = next((e for e in entries if e[0] > 10), None)
+            personal_entry = False
             logger.info(
                 f"Found {len(top_entries)} top entries and {'a' if personal_entry else 'no'} personal entry"
             )
@@ -152,10 +153,9 @@ class RaidTrackingService:
         conn: sqlite3.Connection,
         top_entries: List[Tuple[int, str, int]],
         personal_entry: Optional[Tuple[int, str, int]],
-    ) -> discord.Embed:
-        """Calculate raiding rates and create response embed"""
+    ) -> str:
+        """Calculate raiding rates and create ASCII table response"""
         logger.info("Calculating raid rates")
-        embed = discord.Embed(title="Raiding Rates", color=Colors.SUCCESS)
         now = datetime.utcnow()
 
         # Get the most recent Sunday at 00:30 UTC
@@ -168,12 +168,28 @@ class RaidTrackingService:
             week_start = week_start - timedelta(days=7)
         logger.debug(f"Using week start time: {week_start}")
 
-        # Calculate for top 10
-        top_rates = []
-        for rank, name, current_total in top_entries:
-            logger.debug(f"Calculating rates for {name} (rank {rank})")
+        # Individual box width (3 boxes per row)
+        BOX_WIDTH = 30
+        TOTAL_WIDTH = BOX_WIDTH * 3
 
-            # Get two most recent records for current rate, but only within this week
+        def create_player_box(
+            rank: int, name: str, value1: str, value2: str
+        ) -> List[str]:
+            """Helper function to create a single player box"""
+            border = "*" * BOX_WIDTH
+            title_row = f"*{f'{rank}. {name}'.center(BOX_WIDTH-2)}*"
+            half_width = (BOX_WIDTH - 3) // 2
+            value_row = (
+                f"*{value1.center(half_width)}*{value2.center(BOX_WIDTH-half_width-3)}*"
+            )
+            return [border, title_row, border, value_row, border]
+
+        # Process entries in groups of 3
+        all_boxes = []
+        current_row = []
+
+        def process_entry(rank: int, name: str, current_total: int) -> List[str]:
+            """Process a single entry and return its box lines"""
             recent_records = conn.execute(
                 """
                 SELECT total_raided, recorded_at
@@ -188,22 +204,20 @@ class RaidTrackingService:
             ).fetchall()
 
             if len(recent_records) < 2:
-                # New player with insufficient history this week
-                top_rates.append(
-                    f"{rank}. {name}:\n⭐ New to leaderboard! ⭐\nTotal: {current_total:,}"
-                )
-                continue
+                return create_player_box(rank, name, "New", f"{current_total:,}")
 
-            end_total, end_time = recent_records[0]  # Most recent record
-            start_total, start_time = recent_records[1]  # Second most recent
+            # Calculate rates
+            end_total, end_time = recent_records[0]
+            start_total, start_time = recent_records[1]
             end_time = datetime.strptime(end_time, "%Y-%m-%d %H:%M:%S")
             start_time = datetime.strptime(start_time, "%Y-%m-%d %H:%M:%S")
             hours_elapsed = (end_time - start_time).total_seconds() / 3600
-            current_rate = 0
-            if hours_elapsed > 0:
-                current_rate = f"{int((end_total - start_total) / hours_elapsed):,}"
+            current_rate = (
+                f"{int((end_total - start_total) / hours_elapsed/1000)}k"
+                if hours_elapsed > 0
+                else "N/A"
+            )
 
-            # Get weekly average
             week_start_record = conn.execute(
                 """
                 SELECT total_raided, recorded_at
@@ -226,89 +240,38 @@ class RaidTrackingService:
                 hours_elapsed = (now - start_time).total_seconds() / 3600
                 if hours_elapsed > 0:
                     week_rate = (
-                        f"{int((current_total - start_total) / hours_elapsed):,}"
-                    )
-                    logger.debug(
-                        f"Calculated week rate for {name}: {week_rate}/hr over {hours_elapsed:.1f} hours"
-                    )
-                    logger.debug(
-                        f"*******: current_total: {current_total}, start_total: {start_total}, hours_elapsed: {hours_elapsed}"
+                        f"{int((current_total - start_total) / hours_elapsed/1000)}k"
                     )
 
-            top_rates.append(
-                f"{rank}. {name}:\nCurrent: {current_rate}/hr\nWeek Avg: {week_rate}/hr"
+            return create_player_box(
+                rank, name, f"C:{current_rate}/h", f"W:{week_rate}/h"
             )
 
-        if top_rates:
-            embed.add_field(
-                name="Top Raiders",
-                value="\n".join(top_rates),
-                inline=False,
-            )
+        # Process top entries
+        rows = []
+        current_row = []
+        for entry in top_entries:
+            current_row.append(process_entry(*entry))
+            if len(current_row) == 3:
+                # Combine the boxes into a row
+                row_lines = []
+                for i in range(5):  # 5 lines per box
+                    row_lines.append("".join(box[i] for box in current_row))
+                rows.extend(row_lines)
+                current_row = []
 
-        # Handle personal entry
+        # Handle any remaining entries in the last row
+        if current_row:
+            # Pad with empty boxes if needed
+            while len(current_row) < 3:
+                current_row.append([" " * BOX_WIDTH] * 5)
+            row_lines = []
+            for i in range(5):
+                row_lines.append("".join(box[i] for box in current_row))
+            rows.extend(row_lines)
+
+        # Add personal entry as a separate row if it exists
         if personal_entry:
-            rank, name, current_total = personal_entry
-            logger.debug(f"Calculating personal rates for {name}")
+            rows.extend(process_entry(*personal_entry))
 
-            recent_records = conn.execute(
-                """
-                SELECT total_raided, recorded_at
-                FROM RAID_TRACKING 
-                WHERE player_name = ? 
-                AND is_personal = TRUE
-                AND recorded_at >= ?
-                ORDER BY recorded_at DESC
-                LIMIT 2
-                """,
-                (name, week_start),
-            ).fetchall()
-
-            if len(recent_records) < 2:
-                embed.add_field(
-                    name=f"Your Raiding Stats ({name})",
-                    value=f"⭐ Welcome to the leaderboard! ⭐\nTotal: {current_total:,}",
-                    inline=False,
-                )
-            else:
-                end_total, end_time = recent_records[0]  # Most recent record
-                start_total, start_time = recent_records[1]  # Second most recent
-                end_time = datetime.strptime(end_time, "%Y-%m-%d %H:%M:%S")
-                start_time = datetime.strptime(start_time, "%Y-%m-%d %H:%M:%S")
-                hours_elapsed = (end_time - start_time).total_seconds() / 3600
-                if hours_elapsed > 0:
-                    current_rate = f"{int((end_total - start_total) / hours_elapsed):,}"
-
-                # Get weekly average
-                week_start_record = conn.execute(
-                    """
-                    SELECT total_raided, recorded_at
-                    FROM RAID_TRACKING 
-                    WHERE player_name = ? 
-                    AND recorded_at >= ?
-                    AND is_personal = TRUE
-                    ORDER BY recorded_at ASC
-                    LIMIT 1
-                    """,
-                    (name, week_start),
-                ).fetchone()
-
-                week_rate = "N/A"
-                if week_start_record:
-                    start_total = week_start_record[0]
-                    start_time = datetime.strptime(
-                        week_start_record[1], "%Y-%m-%d %H:%M:%S"
-                    )
-                    hours_elapsed = (now - start_time).total_seconds() / 3600
-                    if hours_elapsed > 0:
-                        week_rate = (
-                            f"{int((current_total - start_total) / hours_elapsed):,}"
-                        )
-
-                embed.add_field(
-                    name=f"Your Raiding Rate ({name})",
-                    value=f"Current: {current_rate}/hr\nWeek Average: {week_rate}/hr",
-                    inline=False,
-                )
-
-        return embed
+        return "```\n" + "\n".join(rows) + "\n```"
